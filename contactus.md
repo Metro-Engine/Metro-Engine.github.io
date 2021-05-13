@@ -1,13 +1,18 @@
 ---
 layout: page
-title: About me
-subtitle: Why you'd want to go on a date with me
+title: Contact Us
+subtitle: Contact Information
 ---
 
-My name is Inigo Montoya. I have the following qualities:
+The main developers of Metro Engine are:
 
-- I rock a great mustache
-- I'm extremely loyal to my family
+- Álvaro Soriano Romero : <sorianoro@esat-alumni.com>
+  - Twitter:
+  - LinkedIn:
+  - Email:
+- Ivan Ivanov Mandev : <ivanovma@esat-alumni.com>
+
+
 
 What else do you need?
 
