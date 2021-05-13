@@ -41,7 +41,9 @@ int main() {
 {: .box-note}
 **Note:** Notice how we wrapped the window creation functionality of GLFW in a class called "**app.h**" so we could maybe extend it in the future to multiple viewports / windows that could be opened simultaneously by the engine.
 
+
 ## Expanding Horizons
+
 
   We did want to learn a lot from this engine so our future perspectives were high, to be able to get a higher score in our subject we had to be able to run our engine in other platform that was not **Windows**, that is why we had in mind porting the engine to platforms such as Mac or Linux.
 
@@ -50,3 +52,6 @@ int main() {
   As any young developer, we both are pretty ambitious people and we meticulously thought about what platform we should port the engine, whenever we scrolled through LinkedIn we noticed that a lot of companies asked as a **bonus** / **extra** to have experience with **consoles**, so we both thought that having that little bonus on our CV / Portfolio would increase our odds to get a job to dive into the industry, so we decided to go for that.
 
   Luckily the university is a **Sony Partner** and have access to the **PS4 Devkit**, so we signed up an **NDA** with **Sony** and **ESAT** and began our journey to port the engine to PS4, it was a pretty rough and difficult journey due to **COVID** we could not be everyday developing with the development kit so we had to do a lot of **blind coding** without any kind of way of checking it it was correct, at the end of the day we got a product that we were happy with and we are happy to say that we are proud with the porting to this console, it was in general an amazing experience that both of us will not forgive because it was our first experience fighting with a very large API and a completely different architecture from what we are used to, which is the PC.
+
+
+
