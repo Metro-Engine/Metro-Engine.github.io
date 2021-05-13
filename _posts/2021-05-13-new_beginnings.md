@@ -5,11 +5,41 @@ subtitle: OpenGL / PS4 Engine
 tags: [engine, opengl, ps4, esat]
 ---
 
-Under what circumstances should we step off a path? When is it essential that we finish what we start? If I bought a bag of peanuts and had an allergic reaction, no one would fault me if I threw it out. If I ended a relationship with a woman who hit me, no one would say that I had a commitment problem. But if I walk away from a seemingly secure route because my soul has other ideas, I am a flake?
+##The Beginning
 
-The truth is that no one else can definitively know the path we are here to walk. It’s tempting to listen—many of us long for the omnipotent other—but unless they are genuine psychic intuitives, they can’t know. All others can know is their own truth, and if they’ve actually done the work to excavate it, they will have the good sense to know that they cannot genuinely know anyone else’s. Only soul knows the path it is here to walk. Since you are the only one living in your temple, only you can know its scriptures and interpretive structure.
+  The decision to create a graphical engine such as **Metro Engine** was pretty straightforward, both of us are students in an university called **ESAT** (__Escuela Superior De Arte y Tecnología__). One of our subjects is "Graphic Engine Programming", in this subject we were tasked with the creation of a multithreading engine that at least ran in one platform such as Windows with **OpenGL** as the graphic backend.
 
-At the heart of the struggle are two very different ideas of success—survival-driven and soul-driven. For survivalists, success is security, pragmatism, power over others. Success is the absence of material suffering, the nourishing of the soul be damned. It is an odd and ironic thing that most of the material power in our world often resides in the hands of younger souls. Still working in the egoic and material realms, they love the sensations of power and focus most of their energy on accumulation. Older souls tend not to be as materially driven. They have already played the worldly game in previous lives and they search for more subtle shades of meaning in this one—authentication rather than accumulation. They are often ignored by the culture at large, although they really are the truest warriors.
+  We are currently studying our last year in this university and we had somewhat some experience with OpenGL and the creation of an engine in general because they taught us the basics in our second year of studies there. The beginning was pretty harsh, something that was not easy for us to understand was the concept of **Multithreading**, being able to use more than one core of your processor was something that had to be taught to us because nowadays, everywhere multithreading is a must, so creating an engine that was ready to be used with multiple cores was a requirement for this subject.
 
-A soulful notion of success rests on the actualization of our innate image. Success is simply the completion of a soul step, however unsightly it may be. We have finished what we started when the lesson is learned. What a fear-based culture calls a wonderful opportunity may be fruitless and misguided for the soul. Staying in a passionless relationship may satisfy our need for comfort, but it may stifle the soul. Becoming a famous lawyer is only worthwhile if the soul demands it. It is an essential failure if you are called to be a monastic this time around. If you need to explore and abandon ten careers in order to stretch your soul toward its innate image, then so be it. Flake it till you make it.
+  The first thing with which we started was the project organization through **GEnie** and the creation of a **private repository** in Github as per request of the teacher and the university. This were some crucial steps, to be able to lay a very strong foundation from which our engine could be built and started with ease so we did not need to do anything but execute a script to be able to build it with Visual Studio 2017 or Visual Studio 2019.
+
+  After arranging all the basic libraries for OpenGL we decided to implement GLFW as our backend for the window previsualization for the engine using the GLEW backend for OpenGL. It was a pretty easy implementation that did not cost us too much time and we definitely enjoyed implementing the core skeleton of the engine with the respective loop.
+
+~~~
+// Metro Engine Main
+
+#include <app.h>
+
+using namespace Metro;
+
+
+void Metro_Main() {
+  srand(time(NULL));
+  App application;
+
+  application.Initialize();
+  application.Run();
+  application.End();
+}
+
+int main() {
+  Metro_Main();
+}
+
+~~~
+
+{: .box-note}
+**Note:** Notice how we wrapped the window creation functionality of GLFW in a class called "**app.h**" so we could maybe extend it in the future to multiple viewports / windows that could be opened simultaneously by the engine.
+
+
 
