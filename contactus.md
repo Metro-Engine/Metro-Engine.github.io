@@ -4,18 +4,12 @@ title: Contact Us
 subtitle: Contact Information
 ---
 
-The main developers of Metro Engine are:
+- Álvaro Soriano Romero :
+  - Twitter: https://twitter.com/SorianoDev
+  - LinkedIn: https://www.linkedin.com/in/alvaro-soriano-romero-5a75a61b9
+  - Email:  <sorianoro@esat-alumni.com>
+- Ivan Ivanov Mandev : 
+  - Twitter: https://twitter.com/mandev_ivan
+  - LinkedIn: https://www.linkedin.com/in/ivan-ivanov-mandev-b2ba001b8/?locale=en_US
+  - Email:  <ivanovma@esat-alumni.com>
 
-- Álvaro Soriano Romero : <sorianoro@esat-alumni.com>
-  - Twitter:
-  - LinkedIn:
-  - Email:
-- Ivan Ivanov Mandev : <ivanovma@esat-alumni.com>
-
-
-
-What else do you need?
-
-### My story
-
-To be honest, I'm having some trouble remembering right now, so why don't you just watch [my movie](https://en.wikipedia.org/wiki/The_Princess_Bride_%28film%29) and it will answer **all** your questions.
