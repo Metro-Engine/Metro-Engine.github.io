@@ -5,7 +5,7 @@ subtitle: OpenGL / PS4 Engine
 tags: [engine, opengl, ps4, esat]
 ---
 
-##The Beginning
+## The Beginning
 
   The decision to create a graphical engine such as **Metro Engine** was pretty straightforward, both of us are students in an university called **ESAT** (__Escuela Superior De Arte y Tecnología__). One of our subjects is "Graphic Engine Programming", in this subject we were tasked with the creation of a multithreading engine that at least ran in one platform such as Windows with **OpenGL** as the graphic backend.
 
@@ -15,7 +15,7 @@ tags: [engine, opengl, ps4, esat]
 
   After arranging all the basic libraries for OpenGL we decided to implement GLFW as our backend for the window previsualization for the engine using the GLEW backend for OpenGL. It was a pretty easy implementation that did not cost us too much time and we definitely enjoyed implementing the core skeleton of the engine with the respective loop.
 
-~~~
+```cpp
 // Metro Engine Main
 
 #include <app.h>
@@ -36,7 +36,7 @@ int main() {
   Metro_Main();
 }
 
-~~~
+```
 
 {: .box-note}
 **Note:** Notice how we wrapped the window creation functionality of GLFW in a class called "**app.h**" so we could maybe extend it in the future to multiple viewports / windows that could be opened simultaneously by the engine.
