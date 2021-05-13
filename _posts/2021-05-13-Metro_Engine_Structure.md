@@ -5,11 +5,27 @@ subtitle: Structure of the Engine
 tags: [structure, resourcemanagement, tinyobj, stblibraries]
 ---
 
-Under what circumstances should we step off a path? When is it essential that we finish what we start? If I bought a bag of peanuts and had an allergic reaction, no one would fault me if I threw it out. If I ended a relationship with a woman who hit me, no one would say that I had a commitment problem. But if I walk away from a seemingly secure route because my soul has other ideas, I am a flake?
 
-The truth is that no one else can definitively know the path we are here to walk. It’s tempting to listen—many of us long for the omnipotent other—but unless they are genuine psychic intuitives, they can’t know. All others can know is their own truth, and if they’ve actually done the work to excavate it, they will have the good sense to know that they cannot genuinely know anyone else’s. Only soul knows the path it is here to walk. Since you are the only one living in your temple, only you can know its scriptures and interpretive structure.
+## The Inner Structure
 
-At the heart of the struggle are two very different ideas of success—survival-driven and soul-driven. For survivalists, success is security, pragmatism, power over others. Success is the absence of material suffering, the nourishing of the soul be damned. It is an odd and ironic thing that most of the material power in our world often resides in the hands of younger souls. Still working in the egoic and material realms, they love the sensations of power and focus most of their energy on accumulation. Older souls tend not to be as materially driven. They have already played the worldly game in previous lives and they search for more subtle shades of meaning in this one—authentication rather than accumulation. They are often ignored by the culture at large, although they really are the truest warriors.
+  The inner structure of this engine is pretty interesting, considering that this engine is based off **multithreading** this means that the organization of how the code is ran is different from coding it in a single core.
 
-A soulful notion of success rests on the actualization of our innate image. Success is simply the completion of a soul step, however unsightly it may be. We have finished what we started when the lesson is learned. What a fear-based culture calls a wonderful opportunity may be fruitless and misguided for the soul. Staying in a passionless relationship may satisfy our need for comfort, but it may stifle the soul. Becoming a famous lawyer is only worthwhile if the soul demands it. It is an essential failure if you are called to be a monastic this time around. If you need to explore and abandon ten careers in order to stretch your soul toward its innate image, then so be it. Flake it till you make it.
+  One of the first things that we were taught this year was multithreading and how we had to have at least **two** different threads running in the engine, one for the ```Update()``` of the engine, implying that all the logic of the engine was ran there and likewise another loop which we can call ```Draw()``` that is where all the rendering of the engine was happening.
+
+  So we have two distinct threads in which our engine has its base layered on:
+  
+    - Update() Loop.
+    - Draw() Loop.
+
+ {: .box-note}
+**Note:** The update loop is not ran at a fixed delta time so it is not suited for physics calculations, the delta time of the frame is not constant so the physics calculations can be often erratic.
+
+  After having the base logic on the loops separated we had to be able to separate the requests that the user could do in the engine from the actual rendering, this situation can be compared to what OpenGL does, you request to draw a triangle for example, and the actual API subscribes you or adds you to a list, it does not immediately listen to the request of the user, it stores a backlog / queue and whenever it has time to fit it in the pipeline, then it is when it draws it. 
+
+  This serves as a way to separate the actual graphic backend from the actual general logic of the engine, this means that whenever the user codes a new functionality in the engine, the changes that the user does are not immediate, they are queued and processed whenever the engine has time.
+
+  ## Producer - Consumer Pattern
+
+  
+
 
