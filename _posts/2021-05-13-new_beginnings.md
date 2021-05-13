@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Metro Engine: A New Beginning
+title: Metro Engine A New Beginning
 subtitle: OpenGL / PS4 Engine
 tags: [engine, opengl, ps4, esat]
 ---
