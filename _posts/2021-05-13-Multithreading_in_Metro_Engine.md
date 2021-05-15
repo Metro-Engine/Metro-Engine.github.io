@@ -161,5 +161,33 @@ tags: [multithreading, tasks, synchronization, px_sched, pplux]
   }
 
 ```
-  
-  
+  With the basic explanation on how the scheduler works and how the synchronization between tasks and fences is done, we have Metro Engine with the separation of the `Update()` and `Draw()` loops and the internal loop looks as following:
+
+```cpp
+
+void App::Run() {
+
+  auto logicThread = [] {
+    Upadte();
+  }
+
+  while (!window.ShouldClose()) {
+    Input();
+    {
+      schd.run(logicThread, &logicSync);
+    }
+    DrawFromMainThread();
+    {
+      schd.waitFor(logicSync);
+    }
+  }
+}
+
+```
+  To finalize and wrap it up you can see that the engine itself treats the logic in a separate thread and the drawing and input is kept on the main thread and it is constantly being ran while the window from `GLFW` is not closed. 
+
+  This is very important because all things render-wise are being drawn in the main thread where all the OpenGL commands in this case are being executed and processed through the **Display Deque** and the logic is being ran in a separate thread (**Logic Commands**).
+
+  Hopefully this clarified how the multithreading works in our engine and shade a light on how this **px_sched** single header library developed by **[pplux](https://github.com/pplux)** works and how easy it is to integrate with any kind of engine to start having a better performant engine with just the snap of a finger!
+
+  We encourage you to try this library and do all the pertinent testing by yourself and hopefully you might like it and keep using it, remember it is open-source!   
