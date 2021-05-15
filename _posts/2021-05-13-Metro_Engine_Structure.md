@@ -40,7 +40,39 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
 ## DisplayList
 
-  In our engine the intermediate **buffer** in this case is the 
+  In our engine the intermediate **buffer** in this case is what we call a "DisplayList" it is a **list** alongside an atomic for multithreaded access, as previously explained, many people will be accessing the table in the restaurant, so having an atomic in this case would prevent race conditions or collisions between threads, it is an **extra** safe measurement that needs to be taken at the expense of slowing down the speed.
+
+ ```cpp
+
+  class DisplayList() {
+    
+  public:
+    DisplayList();
+    ~DisplayList();
+
+    void Add(ScopedPtr<RenderCommand> && newRC) ;
+    void Run();
+    
+    inline void SetSwap(bool isSwap) {
+      swap_ = isSwap;
+    }
+    
+    inline bool swap() const {
+      return swap_;
+    }
+
+    u32 Size() const {
+      return internalList_.size();
+    }    
+
+   private:
+    bool swap_;
+    std::atomic<int> lockValue_;
+    std::list<ScopedPtr<RenderCommand>> internalList_;
+  }
+
+
+```
 
 
 
