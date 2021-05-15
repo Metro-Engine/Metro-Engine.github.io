@@ -88,7 +88,9 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
   In this specific case, the items that will be placed in the _intermediate_ buffer are pretty simple to work with, as seen in the previous piece of code, you can see that those lists work with what we call "Commands" in our engine, we can understand that this list can hold various commands that the actual engine needs to execute thorougly in a very specific and concatenated order so everything works as expected and nothing breaks.
 
-  The `Add()` function pretty much adds a Command to the actual internal list and the `Run()` flushes the whole list from index `0 to size-1` of the list to be execute each one of the individual commands. Now you might be wondering about the concept of `Command`, it is a very broad one and in a graphical engine you might expect it to be pretty much anything, in this case in our engine we have it split up in two distinct types of commands:
+  The `Add()` function pretty much adds a Command to the actual internal list and the `Run()` flushes the whole list from index `0 to size-1` of the list to be execute each one of the individual commands. 
+
+  Now you might be wondering about the concept of `Command`, it is a very broad one and in a graphical engine you might expect it to be pretty much anything, in this case in our engine we have it split up in two distinct types of commands:
 
   - Render Command.
   - Logic Command.
@@ -98,7 +100,60 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
 ## DisplayList Deque
 
-  
+  The _intermediate_ **buffer** I was talking about in this case is the **double-ended list** that we know as "DisplayList Deque", this can be understood as the table or foundation in which all the items (_DisplayList_) are deposited in and processed by the consumers. 
+
+  The main function it has is to extract the actual item from the front of list and process it through the internal `Run()` command that the item has. Of course we do not need to forgive that the actual buffer needs to be protected with an atomic too because this item is going to be heavily requested by a lot of consumers, hence why the access to it has to be highly individualized per thread.
+
+ ```cpp
+
+  class DisplayList() {
+    
+  public:
+    DisplayList();
+    ~DisplayList();
+
+    DisplayList(DisplayList const&) = delete;
+    DisplayList& operator=(DisplayList const&) = delete;
+
+    DisplayList& operator=(DisplayList&& o) {
+      // ...
+    }
+    DisplayList(DisplayList&& o) {
+       // ...
+    }
+
+    inline void SubmitListWithSwap( DisplayList && dl) {
+      // ...
+    }
+    
+    inline void SubmitList(DisplayList && dl) {
+      // ...
+    }
+
+    inline u32 Size() const {
+      // ...
+    }
+    
+    inline DisplayList ExtractList() {
+      // ...
+    }
+
+   private:
+   
+   inline void lock() {
+      // ...
+   }
+
+   inline void unlock() {
+      // ...
+   }
+   
+    std::atomic<int> lockValue_;
+    std::deque < DisplayList > data_;
+  }
+
+
+```
  
 
 
