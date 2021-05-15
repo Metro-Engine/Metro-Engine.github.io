@@ -145,5 +145,51 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
 ```
  
+## RenderCommands & LogicCommands
+
+  The commands that can be executed in this engine are either render commands or logic commands, we will first tackle down the rendering ones because they are the ones that could be a little more complex to understand on why we have a distinction between commands and why we do this organization of rendering & logic for the engine.
+  
+  Whenever you get to create a multithreaded engine with the vision to future to execute it in various platforms and not only using **OpenGL** it is a necessity to be render agnostic from only one graphic backend, utilizing this kind of rendering commands allows us to extrapolate the dependency that we could create with OpenGL and have rendering commands specific to **Vulkan** for example or to **DirectX** without hurting the core structure of the engine which is the one previously explained.
+  
+  This means that the engine is built in such a way that is as render agnostic as possible having the possibility to plug and play with other graphic backends in no time given the structure of processing commands.
+  
+  From the ground and up a rendering and a logic command are practically the same in structure, just for naming convention and separation between them because of their different use, one in rendering and one in internal engine logic, we use different naming.
+  
+```cpp
+
+class RenderCommand() {
+
+  public:
+    RenderCommand() {}
+    virtual ~RenderCommand() {};
+    
+    virtual void Action() = 0;
+
+}
+
+```
+
+  You can pretty much figure out the rest, a logic command is pretty much the same, whenever we want to create an actual command we override the `Action()` function that the command has and fill it with information regarding either **Render** or **Logic** depending on what we want to do at the given time and then just `Add()` it to a DisplayList as previously shown so it later can get executed with the `Run()` function whenever extracted from the **deque**.
+
+  As of now, the render commands are all utilizing **OpenGL** as their graphic backend but they can be conditioned with an ifdef to be able to switch between graphic backends in case you wanted to re-compile the engine to change the graphic backend or we could create a **brand new set** of render commands that could be hot-switched so a change in graphic backend could be done on the fly seamlessly. 
+
+  Thanks to the internal structure of the engine and the methodology we use we are not bound to hardcode in our engine and we can modularize it and incorporate different graphic backends and logic without the expense of re-writing huge chunks of our engine with the bonus addition of it being **multithreaded** which nowadays is a very important factor to consider.
+
+  For example some of the render commands that our engine utilizes internally are:
+  
+    - Draw_Geometry_RC
+    - Clear_Screen_RC
+    - Render_To_Texture_RC
+    - Use_Material_RC
+
+  Many of those render commands do have their own implementations in their respective graphic backends, it is bound to happen if you want to grow further into other platforms to be able to expand your graphic backends too and **rendering** is pretty much the same in all other graphic backends so having this generalized system up is giving us a huge advantage.
+
+  In contraposition we have also what we call the **LogicCommands**, they are not that bound to the different graphic backends because they are the commands that for example _modify the transform of an entity_, _remove a component_, _add a component_, you can see where this is going, it is pretty concentric towards ECS and all the logic that our engine has in general that is not render in itself.
+
+  Practically this is pretty much the same, they are incorporated in the pipeline with the **DisplayList** and the **Deque** because the logic needs to follow a specific order alongside the render for it to make sense and nothing feels desynchronized or off whenever you are either moving an entity while drawing it between frames.
+
+
+
+
 
 
