@@ -36,7 +36,7 @@ tags: [multithreading, tasks, synchronization, px_sched, pplux]
 
   auto myNewTask = [] {
     DoSomething();
-  }
+  };
   
   schedulerHandler_.run(myNewTask, &logicSync_);
 
@@ -51,11 +51,111 @@ tags: [multithreading, tasks, synchronization, px_sched, pplux]
   
   As this is a task scheduler, you need to have some kind of way of controlling the flow of the tasks and the order they are ran in, that is why this synchronization objects that we can refer as `fences` exist. They are used as the gatekeepers for the tasks to maintain a cohesive and coherent order between each other, it is a necessity to be able to control the flow of the tasks without them being in complete utter chaos without being executed in random order.
   
-  ![FencesExample](https://i.imgur.com/I9Q2TuF.png)
+  ![FencesExample](https://i.imgur.com/wpes1Tt.png)
   
+    
+  In the image above we can see that we want to execute from `Task #1` to `Task #4` in a sequential way, notice that in this case we have the concept of `fences` which we can associate as "**synchronization objects**". The example code for the above image would be the following:
+
+```cpp
+
+  int main(int, char **) {
+    px::Scheduler schd;
+    schd.init();
+
+    px::Sync fence1, fence2, fence3;
+    
+    auto task1 = [] {
+      // ...
+    };
+    
+    auto task2 = [] {
+      // ...
+    };
+    
+    auto task3 = [] {
+      // ...
+    };
+    
+    auto task4 = [] {
+      // ...
+    };
+
+    schd.run(task1, fence1);
+    schd.runAfter(fence1, task2, &fence2);
+    schd.runAfter(fence2, task3, &fence3);
+    schd.run(task4, fence3);
+    
+    schd.waitFor(fence3);
+    printf("All tasks have been executed, finalizing.\n");
+
+  }
+
+```
+
+  As you can see we have introduced a new function from the scheduler which in this case is `runAfter()` this functionl is ideally used to concurrently run a task, assign it to a specific fence and make it wait for other fence to finish up the tasks it has.
   
+  This works pretty much like a _semaphore_ telling every single car when to pass to the next area whilst avoiding any kind of collision or misbehavior with the car, it is a pretty cool way to synchronize and run tasks while virtually losing 0% speed because your pipeline is completing all the concurrent tasks and moving on onto the next batch of tasks assigned to the next fence until it finally finishes, the previous example was pretty **sequential** and it did not shine in brigh on the capabilities of th elibrary, the strengths of this library is that it can run for example `10,000 concurrent tasks` and run after a specific fence has finished.
   
-  
-  
+   We also need to remark that at the end of the example we have another function that is called `waitFor`, this function pretty much halts the scheduler and waits for a specific fence to finish all the concurrent tasks it has for it to advance. This is in fact **detrimental** for the performance of the scheduler and it is **heavily suggested** to avoid using `waitFor()` as much as you can, because this essentially kills the performance of your software, in threading you want a continuous pipeline that is running constantly and all the threads are working and are not halted or doing absolutely nothing to achieve **maximum** performance. Here is another _schema_ of multiple tasks being ran concurrently whilst waiting for a synchronization object (_fence_) to finish so it can run the following task.
+
+![Fencing Example Concurrent](https://i.imgur.com/XktMhcm.png)
+
+  Ideally you can see that this time in the leftmost part of the fence we have two tasks that are going to be ran before proceeding with the final task which in this case is number 3. Here is the code example for this scenario:
+
+```cpp
+
+  int main(int, char **) {
+    px::Scheduler schd;
+    schd.init();
+
+    px::Sync fence1, fence2;
+    
+    auto task1 = [] {
+      // ...
+    };
+    
+    auto task2 = [] {
+      // ...
+    };
+    
+    auto task3 = [] {
+      // ...
+    };
+    
+    auto task4 = [] {
+      // ...
+    };
+
+    schd.run(task1, &fence1);
+    schd.run(task2, &fence1);
+    schd.runAfter(fence1, task3, &fence2);
+    
+    schd.waitFor(fence2);
+    printf("All tasks have been executed, finalizing.\n");
+
+  }
+
+```
+
+  I am showing simple and stupid examples here, but remember that you can send a huge amount of tasks to a fencing object just like in this example:
+
+```cpp
+  int main(int, char **) {
+    px::Scheduler schd;
+    schd.init();
+
+    px::Sync fence1;
+    
+    for(int i = 0; i < 10000; ++i) {
+      auto job = [i] {
+        printf("Task %d: Completed from %s\n",
+          i, px::Scheduler::current_thread_name());
+      };
+      schd.run(job, &fence1);
+    }
+
+  }
+
+```
   
   
