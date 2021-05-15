@@ -26,7 +26,7 @@ tags: [multithreading, tasks, synchronization, px_sched, pplux]
     // ...
     customSchedParams_.num_threads = numThreads;
     schedulerHandler_.init(customSchedParams_);
-    printf("[SCHEDULER] Initialized scheduler with %d threads\n, numThreads);
+    printf("[SCHEDULER] Initialized scheduler with %d threads\n", numThreads);
   }
 
   void DoSomething() {
