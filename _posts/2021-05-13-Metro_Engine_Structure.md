@@ -40,7 +40,9 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
 ## DisplayList
 
-  In our engine the intermediate **buffer** in this case is what we call a "DisplayList" it is a **list** alongside an atomic for multithreaded access, as previously explained, many people will be accessing the table in the restaurant, so having an atomic in this case would prevent race conditions or collisions between threads, it is an **extra** safe measurement that needs to be taken at the expense of slowing down the speed.
+ In our engine the intermediate **buffer** in this case is what we call a "DisplayList" it is a **list** alongside an atomic for multithreaded access, as previously explained, many people will be accessing the table in the restaurant, so having an atomic in this case would prevent race conditions or collisions between threads, it is an **extra** safe measurement that needs to be taken at the expense of slowing down the speed.
+
+  In our engine the item that is going to be put in the _intermediate_ **buffer** is what we call the "DisplayList" it is a **list** alongside an atomic for multithreaded access, we expect many consumers to access this item to either look or process it thoroughly so an atomic is just a preventive measure in case we have race conditions or thread collisions that we obviously want to avoid, it is just an **extra safety** measurement that needs to be taken at the expense of slowing down the whole process of item consumption by the consumers. (_If this was the restaurant scenario you would not want to eat too fast or eat without looking you might get a stomach ache or food posoning! _)
 
  ```cpp
 
@@ -60,7 +62,7 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
        // ...
     }
 
-    void Add( RenderCommand && newRC ) ;
+    void Add( Command && newRC ) ;
     void Run();
     
     inline void SetSwap(bool isSwap) {
@@ -78,11 +80,25 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
    private:
     bool swap_;
     std::atomic<int> lockValue_;
-    std::list< RenderCommand > internalList_;
+    std::list< Command > internalList_;
   }
 
 
 ```
 
+  In this specific case, the items that will be placed in the _intermediate_ buffer are pretty simple to work with, as seen in the previous piece of code, you can see that those lists work with what we call "Commands" in our engine, we can understand that this list can hold various commands that the actual engine needs to execute thorougly in a very specific and concatenated order so everything works as expected and nothing breaks.
+
+  The `Add()` function pretty much adds a Command to the actual internal list and the `Run()` flushes the whole list from index `0 to size-1` of the list to be execute each one of the individual commands. Now you might be wondering about the concept of `Command`, it is a very broad one and in a graphical engine you might expect it to be pretty much anything, in this case in our engine we have it split up in two distinct types of commands:
+
+  - Render Command.
+  - Logic Command.
+
+  I will get back to those later on in this blog post, but firstly I will be explaining the function of the _intermediate_ buffer and what it is in our engine.
   
+
+## DisplayList Deque
+
+  
+ 
+
 
