@@ -30,7 +30,7 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
   The Producer in this case is the one that will be qualified as the supplier or the one that is going to be filling up the actual buffer constantly whereas the consumer is the one that will be taking those "items" that are being dropped into the _intermediate buffer_ and using them either for logic or rendering.
 
-  ![Producer Consumer Pattern](https://www.google.com/url?sa=i&url=http%3A%2F%2Frunlabs.azurewebsites.net%2F2017%2F08%2F21%2Fmulti-thread-producer-consumer%2F&psig=AOvVaw1bhiH-y_SCJrF5whfYfuhi&ust=1621025944138000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCODxnrLGx_ACFQAAAAAdAAAAABAJ)
+  ![Producer Consumer Pattern](http://1.bp.blogspot.com/-ve5pbciTlBQ/UR1fzTt_BoI/AAAAAAAAAs0/jk6P3ce1fpE/s1600/Screen+Shot+2013-02-14+at+22.05.37.png)
 
   The concept is pretty similar to what a restaurant would work like, think of it as the following scenario, imagine that you are in a restaurant with your friends, you all see a waiter approach and take your orders for food, each one being different in size. The food that you guys order will be deposited on a big table in the middle of the restaurant and you guys will be responsible for taking those items from the table to eat them.
 
