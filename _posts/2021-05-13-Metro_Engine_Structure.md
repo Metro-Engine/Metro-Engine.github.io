@@ -106,21 +106,11 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
  ```cpp
 
-  class DisplayList() {
+  class DisplayListDeque() {
     
   public:
-    DisplayList();
-    ~DisplayList();
-
-    DisplayList(DisplayList const&) = delete;
-    DisplayList& operator=(DisplayList const&) = delete;
-
-    DisplayList& operator=(DisplayList&& o) {
-      // ...
-    }
-    DisplayList(DisplayList&& o) {
-       // ...
-    }
+    DisplayListDeque();
+    ~DisplayListDeque();
 
     inline void SubmitListWithSwap( DisplayList && dl) {
       // ...
