@@ -168,7 +168,7 @@ tags: [multithreading, tasks, synchronization, px_sched, pplux]
 void App::Run() {
 
   auto logicThread = [] {
-    Upadte();
+    Update();
   }
 
   while (!window.ShouldClose()) {
