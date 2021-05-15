@@ -50,19 +50,19 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
     DisplayList();
     ~DisplayList();
 
-    void Add(ScopedPtr<RenderCommand> && newRC) ;
+    void Add( ... ) ;
     void Run();
     
     inline void SetSwap(bool isSwap) {
-      swap_ = isSwap;
+      // ...
     }
     
     inline bool swap() const {
-      return swap_;
+      // ...
     }
 
     u32 Size() const {
-      return internalList_.size();
+      // ...
     }    
 
    private:
