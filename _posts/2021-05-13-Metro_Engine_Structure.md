@@ -68,7 +68,7 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
    private:
     bool swap_;
     std::atomic<int> lockValue_;
-    std::list<ScopedPtr<RenderCommand>> internalList_;
+    std::list< ... > internalList_;
   }
 
 
