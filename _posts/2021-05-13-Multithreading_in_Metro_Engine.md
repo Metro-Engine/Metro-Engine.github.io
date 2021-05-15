@@ -43,7 +43,9 @@ tags: [multithreading, tasks, synchronization, px_sched, pplux]
 
 ```
   
-  Of course this is just a dumb example on how a task can be executed, you can clearly see that you need an initialize function for the scheduler handler which in this case would be `InitializeScheduler()` and it would accept as parameters the number of threads that would be utilized by given scheduler to actually send the tasks to. Aside from that we also hace the custom structure `px_sched::SchedulerParams customSchedParams_` which we need to fill with specific information so the handler can execute in a correct manner.
+  Of course this is just a dumb example on how a task can be executed, you can clearly see that you need an initialize function for the scheduler handler which in this case would be `InitializeScheduler()` and it would accept as parameters the number of threads that would be utilized by given scheduler to actually send the tasks to. 
+  
+  Aside from that we also hace the custom structure `px_sched::SchedulerParams customSchedParams_` which we need to fill with specific information so the handler can execute in a correct manner.
   
   We need to remark that the use of lambdas / anonymous functions is a very common way to send specific functions to the scheduler, it is a very common way to wrap functions or specific bits of code that you want to be ran within a specific scope by the scheduler.
   
@@ -94,9 +96,11 @@ tags: [multithreading, tasks, synchronization, px_sched, pplux]
 
   As you can see we have introduced a new function from the scheduler which in this case is `runAfter()` this functionl is ideally used to concurrently run a task, assign it to a specific fence and make it wait for other fence to finish up the tasks it has.
   
-  This works pretty much like a _semaphore_ telling every single car when to pass to the next area whilst avoiding any kind of collision or misbehavior with the car, it is a pretty cool way to synchronize and run tasks while virtually losing 0% speed because your pipeline is completing all the concurrent tasks and moving on onto the next batch of tasks assigned to the next fence until it finally finishes, the previous example was pretty **sequential** and it did not shine in brigh on the capabilities of th elibrary, the strengths of this library is that it can run for example `10,000 concurrent tasks` and run after a specific fence has finished.
+  This works pretty much like a _semaphore_ telling every single car when to pass to the next area whilst avoiding any kind of collision or misbehavior with the car, it is a pretty cool way to synchronize and run tasks while virtually losing 0% speed because your pipeline is completing all the concurrent tasks and moving on onto the next batch of tasks assigned to the next fence until it finally finishes, the previous example was pretty **sequential** and it did not shine in brigh on the capabilities of the library, the strengths of this library is that it can run for example `10,000 concurrent tasks` and run after a specific fence has finished.
   
-   We also need to remark that at the end of the example we have another function that is called `waitFor`, this function pretty much halts the scheduler and waits for a specific fence to finish all the concurrent tasks it has for it to advance. This is in fact **detrimental** for the performance of the scheduler and it is **heavily suggested** to avoid using `waitFor()` as much as you can, because this essentially kills the performance of your software, in threading you want a continuous pipeline that is running constantly and all the threads are working and are not halted or doing absolutely nothing to achieve **maximum** performance. Here is another _schema_ of multiple tasks being ran concurrently whilst waiting for a synchronization object (_fence_) to finish so it can run the following task.
+   We also need to remark that at the end of the example we have another function that is called `waitFor`, this function pretty much halts the scheduler and waits for a specific fence to finish all the concurrent tasks it has for it to advance. 
+   
+   This is in fact **detrimental** for the performance of the scheduler and it is **heavily suggested** to avoid using `waitFor()` as much as you can, because this essentially kills the performance of your software, in threading you want a continuous pipeline that is running constantly and all the threads are working and are not halted or doing absolutely nothing to achieve **maximum** performance. Here is another _schema_ of multiple tasks being ran concurrently whilst waiting for a synchronization object (_fence_) to finish so it can run the following task.
 
 ![Fencing Example Concurrent](https://i.imgur.com/XktMhcm.png)
 
