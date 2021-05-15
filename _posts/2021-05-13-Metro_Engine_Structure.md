@@ -60,7 +60,7 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
        // ...
     }
 
-    void Add( ... ) ;
+    void Add( RenderCommand && newRC ) ;
     void Run();
     
     inline void SetSwap(bool isSwap) {
@@ -78,7 +78,7 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
    private:
     bool swap_;
     std::atomic<int> lockValue_;
-    std::list< ... > internalList_;
+    std::list< RenderCommand > internalList_;
   }
 
 
