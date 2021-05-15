@@ -50,6 +50,16 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
     DisplayList();
     ~DisplayList();
 
+    DisplayList(DisplayList const&) = delete;
+    DisplayList& operator=(DisplayList const&) = delete;
+
+    DisplayList& operator=(DisplayList&& o) {
+      // ...
+    }
+    DisplayList(DisplayList&& o) {
+       // ...
+    }
+
     void Add( ... ) ;
     void Run();
     
@@ -74,5 +84,5 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
 ```
 
-
+  
 
