@@ -24,7 +24,7 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
   This serves as a way to separate the actual graphic backend from the actual general logic of the engine, this means that whenever the user codes a new functionality in the engine, the changes that the user does are not immediate, they are queued and processed whenever the engine has time.
 
-  ## Producer Consumer Pattern
+## Producer Consumer Pattern
 
   This is a very interesting pattern that was brought to us whenever multithreading and how we should treat the actual handling of all the rendering and logic of the engine in its entirety. Basically the pattern goes as following, you have in the middle an _intermediate_ **buffer** that is going to be used as the core communication between the left and right sides of this pattern, the **producer** and the **consumer**.
 
@@ -38,7 +38,7 @@ tags: [structure, resourcemanagement, tinyobj, stblibraries]
 
   This implies that there are dishes with a variety of sizes and colors and each one gets consumed responsibly by **one** person, it is a clean way to avoid conflic, everyone knows his dish and everything gets consumed slowly but surely without any kind of confusion.
 
-  ## DisplayList
+## DisplayList
 
   In our engine the intermediate **buffer** in this case is the 
 
