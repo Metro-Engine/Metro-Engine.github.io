@@ -231,5 +231,53 @@ namespace Metro {
 
   You can see now that we first create the display list, we create the rendercommand and pass it the pertinent parameters and we later add it to the display list to finally at the end submit the list to the **main deque** that we have in our engine. Of course you can see that in the middle of this process we throw a clean screen render command in the middle so we can do another pass in the future with clean information.
   
+  ## Shader Specifics
+  
+  Now you might be wondering how do we capture this output through the shader and utilize it, so far we have only seen **CPU** code and we have not seen a single bit of **GLSL**, it is actually pretty simple, OpenGL after having everything binded correctly, you can just capture those based on their attachment number and use them in the shader with no problem. (_You need to remember that you are binding with textures_), this implies that for deferred to work efficiently you need to have **UVS** that you can safely pass to the shader through _attribute binding_ from the **VS shader** to the **FS shader**.
+ 
+```glsl
+
+// Fragment Shader / Pixel Shader Example:
+
+// Imagine that you are binding for example the positions, normals and albedo textures to the shader following the color attachment order of 0, 1, 2
+
+layout (location = 0) out vec4 gPosition;
+layout (location = 1) out vec4 gNormal;
+layout (location = 2) out vec4 gRawColor;
+
+uniform sampler2D u_texture_normals;
+uniform sampler2D u_texture_albedo;
+
+// UVS come from attribute binding from the VS Shader.
+in vec2 uvs;
+
+// World Space Position & WorldNormal comes calculated from VS Shader
+in vec4 worldSpacePosition;
+in vec4 worldSpaceNormal;
+
+void main() 
+{
+
+  vec3 albedoColor = texture(u_texture_albedo, uvs).rgb;
+  
+  gPosition = vec4(worldSpacePosition.xyz, 1.0);
+  gRawColor = vec4(albedoColor, 0.0);
+  gNormal = vec4(worldSpaceNormal.xyz, 1.0);
+
+}
+
+
+```
+
+  {: .box-warning}
+**Warning:** It is very important to bring all the information in the same **coordinate space** whenever doing lighting calculations for example, else you will get unexpected and/or undesired results.
+
+  In this case we utilize **world-space** coordinate system and we transfer the data to the individual g-buffers which will later be utilized in the **lighting pass**. This is how we essentially capture the information through the geometry pass so it can later be used in the lighting pass in the same old fashioned way, you get the buffer, unwrap it with the uvs and use it in the shape of a `vec3` or `vec4` depending if you are going to store extra information in the 4th coordinate of each buffer.
+  
+  In the example we did **not** choose to store extra information but as you can see they have an extra coordinate in which you could store for example the **roughness** or **specular** value in case you were doing for example **PBR**(_Physical Based Rendering_).
+  
+  Now the **lighting pass** is as easy as binding the desired g-buffer textures to the lighting pass shader through uniforms and then use that information.
   
   
+  
+
