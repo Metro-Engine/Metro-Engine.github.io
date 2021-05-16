@@ -276,7 +276,7 @@ void main()
   
   In the example we did **not** choose to store extra information but as you can see they have an extra coordinate in which you could store for example the **roughness** or **specular** value in case you were doing for example **PBR**(_Physical Based Rendering_).
   
-  Now the **lighting pass** is as easy as binding the desired g-buffer textures to the lighting pass shader through uniforms and then use that information.
+  Now the **lighting pass** is as easy as binding the desired g-buffer textures to the lighting pass shader through uniforms and then use that information to do all pertinent lighting calculations.
   
   
   
