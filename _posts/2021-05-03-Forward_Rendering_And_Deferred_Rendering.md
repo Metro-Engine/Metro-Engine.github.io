@@ -30,4 +30,30 @@ tags: [rendering, forwardrendering, deferredrendering, opengl]
 
 ## Deferred Rendering
 
+  As previously mentioned, deferred rendering is the perfect case for whenever you have a software in which you render lighting such as an engine and you do want to have multiple light sources without having any operations wasted.
+  
+  This of course comes with a drastic change in how we render objects, given that this technique allows us to render **hundreds** or even **thousands** of lights with a rather acceptable framerate without any kind of trottle.
+  
+  The idea of this rendering technique is to postpone the lighting calculations to a later stage, this means that we need to do passes, first we need to do what is called the **geometry pass** in which we render the scene and retrieve all the geometry visible in the clipping space of the camera, this means that we will be retrieving all the geometrical information and storing them in a collection of textures called the **G-Buffer**.
+
+  This essentially means that we will be sort of doing a snapshot of specific parts of the scene and store them in a canvas, in one single frame, we will be storing values such as:
+  
+  - Position Vectors.
+  - Color Vectors.
+  - Normal Vectors.
+  - Specular Values (Optionally).
+
+  Once again this implies that we will be constantly doing snapshots and storing the information in a canvas and we will have this information separated in different canvas, think of having like 4 different sheets of paper size A4 in which you draw stuff, in this case whenever you do the geometry pass, in the first sheet of paper you store the positions, in the next one the normals, the other one the albedo calculations and the last one the specular values. 
+  
+   I know this might be a dumb way to explain it but this is a way to store information separatedly in different places and that allows us as the developers to utilize that information whenever needed for our own purposes like doing a postprocess that requires the normals of our geometries or a postprocess that requires the position of our geometries. It is a very useful way to separate the information and to not be overwriting data anywhere, you centralize and localize it in sheets of paper (_textures_) and use them for your specific purposes.
+   
+   With that said we know now that we have a G-Buffer (_which has all those sheets filled with different information_) and we use them for what we know as a **second pass** which in this case is the **lighting pass** where we generate a plane/quad and calculate the scene's lighting for each fragment using all the geometrical information that we have stored in the **G-Buffer**.
+   
+   ![Position,Color,Normals](https://i.imgur.com/eV4SpI8.png)
+   
+   `(Positions: Up-Left, Normals: Up-Right, Color: Middle)`
+   
+  For example in our engine we have the following textures (_sheets of paper_) filled with information about positions, color(_albedo_) and normals. This allows us to do a second pass 
+  
+  
   
