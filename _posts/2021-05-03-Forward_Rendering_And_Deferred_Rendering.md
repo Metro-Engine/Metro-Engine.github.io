@@ -361,17 +361,17 @@ void main()
 
   In this case we use a **DrawGeometryRC** that allows us to draw any kind of geometry to the screen, it is done through a render command once again to follow the pipeline of our engine so everything is properly synchronized and with no mishaps. 
 	
-	Overall you can guess the general casuistry that our engine follows to be able to do deferred rendering, you do the following steps:
-	
-		1. Create a RenderToTexture.
-		2. Add pertinent Color / Depth Attachments.
-		3. Add it to a DisplayList and Set RenderTarget. (Geometry Pass)
-		4. Bind the pertinent textures through uniforms to be able to utilize them in the light pass FS shader.
-		5. Add it to a DisplayList and Set RenderTarget (Lighting Pass)
-		6. DrawGeometry Render Command to draw a full screen Quad. (Submit to Deque List).
-		7. And lastly before doing the buffer swap, you renderize to screen with the `RenderToScreenRC` with one last **RenderToTexture** which contains the _**finalColorTexture**_. 
-	
-	Hopefully this helped you understand how deferred rendering works in our engine, in case you feel like you lack information to be able to complete this rendering technique we suggest you to go to [LearnOpenGL Deferred Shading](https://learnopengl.com/Advanced-Lighting/Deferred-Shading) post and invite you to read it thorougly, they do also have a simpler and more approachable way to do deferred shading without the constraints of the structure of our engine such as the render commands or the display lists.
+Overall you can guess the general casuistry that our engine follows to be able to do deferred rendering, you do the following steps:
+
+	1. Create a RenderToTexture.
+	2. Add pertinent Color / Depth Attachments.
+	3. Add it to a DisplayList and Set RenderTarget. (Geometry Pass)
+	4. Bind the pertinent textures through uniforms to be able to utilize them in the light pass FS shader.
+	5. Add it to a DisplayList and Set RenderTarget (Lighting Pass)
+	6. DrawGeometry Render Command to draw a full screen Quad. (Submit to Deque List).
+	7. And lastly before doing the buffer swap, you renderize to screen with the `RenderToScreenRC` with one last **RenderToTexture** which contains the _**finalColorTexture**_. 
+
+ Hopefully this helped you understand how deferred rendering works in our engine, in case you feel like you lack information to be able to complete this rendering technique we suggest you to go to [LearnOpenGL Deferred Shading](https://learnopengl.com/Advanced-Lighting/Deferred-Shading) post and invite you to read it thorougly, they do also have a simpler and more approachable way to do deferred shading without the constraints of the structure of our engine such as the render commands or the display lists.
 	
 	
 	
