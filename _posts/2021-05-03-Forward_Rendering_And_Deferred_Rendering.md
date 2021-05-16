@@ -60,3 +60,176 @@ tags: [rendering, forwardrendering, deferredrendering, opengl]
   The advantage of deferred is that whatever fragment ends up in the G-Buffer is the actual information that ends up shown in the screen pixel, a depth test is already done and it is concluded which fragment to be the top-most one, implying that there is no data overwriting and no wasted calculations, everything is done precisely and to the point.
   
   This means that the cost of the light calculatios is not `num_fragments * num_lights` anymore because this approach ensures that for each pixel processed in the lighting pass, the lighting is only calculated **once**.
+
+  This rendering technique is not perfect, it comes with disadvantages and one of them is that the G-buffer requires a lot of scene data to be stored, this means that this technique is heavy memory wise, but it is all at the expense of being able to have many light sources without a huge reduction in framerate.
+
+## Metro Engine Approach to Deferred
+
+  In our engine we utilize this technique alongside the OpenGL graphic backend but we reassure you that this is pretty much the same process through any other graphic backend such as in PS4.
+  
+  To be able to create the **G-Buffer** you initially need a **framebuffer**, this is essentially just a chunk of memory in which you can store information, given that you are doing the **geometry pass** for example, you will be storing the position, normal, albedo texture information there.
+  
+  In this case with the OpenGL graphic backend you can create a framebuffer and this allows us to have multiple render targets to which we can render, think of it as a creation of a "_new screen_" for every **framebuffer** you create.
+  
+  This means that in Metro Engine we have a class called "**RenderToTexture**" that allows us to do color attachments and depth attachments (by attachments we imply textures that will be used inside that "_new screen_" or as technically speaking, framebuffer.
+  
+```cpp
+
+namespace Metro {
+
+  class RenderToTexture {
+
+  public:
+    RenderToTexture() {
+      // ...
+    }
+    ~RenderToTexture() {
+      // ...
+    }
+
+    inline u32 GetID() const {
+      // ...
+    } 
+    inline void SetID(u32 newID) {
+      // ...
+    }
+
+    inline void AddAttachment(u32 tex, u32 depthTex = -1, bool withStencil = false) {
+        // ...
+    }
+
+    inline void AddDepthAttachment(u32 depthTex, bool withStencil) {
+      // ...
+    }
+
+    inline u32 GetInternalColorAttachmentSize() {
+        // ...
+    }
+
+    inline u32 GetTextureIDFromIndex(u32 index) {
+        // ...
+    }
+
+    inline u32 GetAttachmentsUsed() {
+        // ...
+    }
+
+    inline void SetAttachmentsUsed(u32 value) {
+        // ...
+    }
+
+    inline u32 GetCurrentDepthTexture() {
+        // ...
+    }
+
+    inline void SetLastFrameColorBuffer(std::vector<u32> currentColorAttachmentBuffer) {
+        // ...
+    }
+
+    inline void SetLastFrameDepthBuffer(u32 currentDepthAttachment) {
+        // ...
+    }
+
+    inline std::vector<u32> GetInternalColorAttachmentBuffer() {
+        // ...
+    }
+
+    inline std::vector<u32> GetLastFrameColorAttachmentBuffer() {
+        // ...
+    }
+
+    inline u32 GetLastFrameDepthTexture() {
+        // ...
+    }
+
+    inline void FramebufferSnapshot() {
+        // ...
+    }
+
+    inline bool HasStencil() {
+      // ...
+    }
+
+  private:
+    u32 internalID_;
+    std::vector<u32> internalColorAttachmentsBuffer_;
+    u32 internalDepthAttachment_;
+    u32 numberAttachmentsUsed_;
+
+    std::vector<u32> lastFrameColorAttachmentBuffer_;
+    u32 lastFrameDepthAttachment_;
+
+    bool withStencil_;
+
+  };
+
+
+```
+
+  This means that the sole purpose of this class is to store the textures which you attach to the framebuffer, another **analogy** that we can do for a "framebuffer" is the class name itself, **Render To Texture**, implying that the _new screen_ in this case is a texture, a white canvas in which you can draw freely given information, that is for waht the attachments are.
+  
+  This class on itself is not that useful given the current structure of our engine, we do utilize **RenderCommands** and **DisplayList** as previously mentioned in the [general structure of our engine](https://metro-engine.github.io/2021-05-13-Metro_Engine_Structure/) post, this means that we need to follow this pipeline for us to be able to render to screen successfully without any trouble.
+  
+  So we have a render command for the render to texture and the render to screen and those are the following:
+  
+  ```cpp
+  class RenderToTargetRC : public RenderCommand {
+
+  public:
+
+    ~RenderToTargetRC() override {
+    }
+
+    void Action() override;
+
+    void SetTarget(RenderToTexture* targetRenderTexture);
+
+  private:
+
+    u32 GenerateColorTexture(u32 texPassed);
+    u32 GenerateDepthTexture(u32 depthTextPassed);
+
+    RenderToTexture* fillRenderToTextureObject_;
+  };
+  
+```
+```cpp
+
+  class RenderToScreenRC : public RenderCommand {
+
+  public:
+    void Action() override;
+  };
+  
+````
+
+  This **RenderCommands** internally create **framebuffers** and alongside the actual textures that we pass to the RenderToTexture we do all the pertinent mixmatching and drawing of textures. For example to do the geometry draw of deferred rendering in our engine we do the following:
+  
+ ```cpp
+ //----------------------------------------Geometry Pass
+  ScopedPtr<DisplayList> geometryPassDL;
+  geometryPassDL.Alloc();
+
+  ScopedPtr<RenderCommand> renderToTextureRC2;
+  RenderToTargetRC* rendToTextureRCItself2 = renderToTextureRC2.AllocT<RenderToTargetRC>();
+  rendToTextureRCItself2->SetTarget(&geometryPassRender_);
+  geometryPassDL->Add(std::move(renderToTextureRC2));
+
+  ScopedPtr<RenderCommand> clearScreenRC2;
+  ClearScreenRC *clearScreenRCItself = clearScreenRC2.AllocT<ClearScreenRC>();
+  clearScreenRCItself->SetClearColor(glm::vec4(0.5f, 0.5f, 1.0f, 1.0f));
+  clearScreenRCItself->SetDepthClearing(true);
+  clearScreenRCItself->SetStencilClearing(true);
+  geometryPassDL->Add(std::move(clearScreenRC2));
+
+  SubmitList(std::move(geometryPassDL));
+
+```
+  
+  {: .box-note}
+**Note:** You might see that in this code we have something called `ScopedPtr` and this is explained in a resource management post in the blog which you can find here.
+
+  You can see now that we first create the display list, we create the rendercommand and pass it the pertinent parameters and we later add it to the display list to finally at the end submit the list to the **main deque** that we have in our engine. Of course you can see that in the middle of this process we throw a clean screen render command in the middle so we can do another pass in the future with clean information.
+  
+  
+  
