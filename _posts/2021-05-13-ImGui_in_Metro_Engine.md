@@ -62,6 +62,11 @@ The engine will give you an error message and will not let you add a component t
   Lastly and to finalize with the introduction of all the interface that is shown in the engine we can see that we have the logger, in this window you can see that you can receive information from the status of the engine in the shape of color coded messages, yellow for warnings, grey for plain command messages such as setting the position of an entity and lastly red for errors that require the attention of the user.
   
   This logger is rather _useful_ whenever you do want to script in the engine or want to execute a lua file, it is a perfect way to print and debug through the logger, it is after all a necessity for the developer to see which values are being printed whenever coding in the scripting language in the engine.
+
+  In this case we have the **Clear** , **Copy** and **Add Debug Text** buttons which each one of them are useful in their own way, you can clear the whole logger, copy the whole logger output to your clipboard and test the logger by adding a debug text in case you are wondering if it is still working properly. We do not need to forgive about the **auto-scroll** checkbox which is a commodity feature for the developer, so every time a new message gets added to the logger, it gets auto scrolled to the bottom.
+  
+  You need to take care that the logger has a limit at **50 messages**, after that each message starting from above gets deleted and is lost forever.
+  
   
 ### Last Words
 
