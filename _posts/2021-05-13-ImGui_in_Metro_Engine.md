@@ -54,3 +54,18 @@ The engine will give you an error message and will not let you add a component t
   I completely forgot to show the other tab that was next to the hierarchy tab due to the fps counter blocking the view of it, this is the lua tab of the engine, here you can see that you can either write code inside the text box in runtime and see the results, you have the logger in the center bottom part of the engine to support your actual scripting with prints to see that everything is working as expected.
   
   Aside from having the runtime option you can also create a file and run it through the engine as long as you deposit it in the `lua_scripts` folder of the engine and then insert the name of the script such as `HelloWorld` if the file was called `HelloWorld.lua`.
+
+### Logger Window
+
+![Logger Window](https://i.imgur.com/19qwL8C.png)
+
+  Lastly and to finalize with the introduction of all the interface that is shown in the engine we can see that we have the logger, in this window you can see that you can receive information from the status of the engine in the shape of color coded messages, yellow for warnings, grey for plain command messages such as setting the position of an entity and lastly red for errors that require the attention of the user.
+  
+  This logger is rather _useful_ whenever you do want to script in the engine or want to execute a lua file, it is a perfect way to print and debug through the logger, it is after all a necessity for the developer to see which values are being printed whenever coding in the scripting language in the engine.
+  
+### Last Words
+
+  Once again, thanks to [Ocornut](https://github.com/ocornut) for having such a great **immediate mode** graphic library so it is easier for us developers to build the interface of our engine or software in just a snap of a finger without having too much trouble!
+  
+  
+
