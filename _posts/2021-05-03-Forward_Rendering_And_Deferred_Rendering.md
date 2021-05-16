@@ -278,6 +278,85 @@ void main()
   
   Now the **lighting pass** is as easy as binding the desired g-buffer textures to the lighting pass shader through uniforms and then use that information to do all pertinent lighting calculations.
   
-  
-  
 
+```glsl
+
+// Fragment Shader / Pixel Shader Example:
+
+// Imagine that you are binding for example the positions, normals and albedo textures to the shader following the color attachment order of 0, 1, 2
+
+layout (location = 0) out vec4 gFinalResult;
+
+uniform sampler2D u_color_texture;
+uniform sampler2D u_position_texture;
+uniform sampler2D u_normal_texture;
+
+// UVS come from attribute binding from the VS Shader.
+in vec2 uvs;
+
+// World Space Position & WorldNormal comes calculated from VS Shader
+in vec4 worldSpacePosition;
+in vec4 worldSpaceNormal;
+
+void main() 
+{
+
+  vec4 finalColor = vec4(0.0, 0.0, 0.0, 1.0);
+	vec4 colorTexValue = texture(u_color_texture, uvs);
+
+	vec4 worldSpacePosition = texture(u_position_texture, uvs);
+	worldSpacePosition.a = 1.0;
+	vec4 normals = texture(u_normal_texture, uvs);
+	normals.a = 0.0;
+
+	int numOfDirectionalLights = int(numOfLights.x);
+	int numOfSpotLights = int(numOfLights.y);
+	int numOfPointLights = int(numOfLights.z);
+
+	vec4 lightSpacePositions[kMaxDirectionalLights];
+
+	for(int i = 0; i < numOfDirectionalLights; ++i){
+		lightSpacePositions[i] = u_light_p_matrix[i] * u_light_v_matrix[i] * worldSpacePosition;
+		finalColor += CalculateDirectionalLights(directionalLights[i], normals, lightSpacePositions[i], colorTexValue, i);
+	}
+
+	for(int i = 0; i < numOfPointLights; ++i){
+		finalColor += CalculatePointLight(pointLights[i], worldSpacePosition, normals);
+	}
+
+	for(int i = 0; i < numOfSpotLights; ++i){
+		finalColor += CalculateSpotLight(pointLights[i], worldSpacePosition, normals);
+	}
+
+
+	gFinalResult = finalColor;
+
+}
+
+
+```
+  
+  As you can see, in the light pass for normal lighting, you use the textures that you bind and then uv unwrap them with the `texture(texture, uvs)` function and then do the pertinent calculations for the different types of lightings that your engine might use.
+  
+  At the end you might have noticed that we once again generate a g-buffer texture which will be filled with the final color texture that will be later drawn to screen with the **RenderToScreen** RenderCommand.
+  
+```cpp
+
+	ScopedPtr<RenderCommand> renderToScreenRC;
+	renderToScreenRC.AllocT<RenderToScreenRC>();
+	swapList->Add(std::move(renderToScreenRC));
+
+```
+  And we shall not forgive that this process is nothing if we do not draw a full screen quad from 0,0 to 1,1 (width, height) and draw a texture with the final lighting results on it.
+  
+```cpp
+
+  ScopedPtr<RenderCommand> drawGeoRC;
+  DrawGeometryRC* drawGeoRCitself = drawGeoRC.AllocT<DrawGeometryRC>();
+  drawGeoRCitself->SetGeometry(resourceManager_->GetGeometry(ResourceManager::kGeometryType_Quad));
+  drawGeoRCitself->screenSpaceGeometry_ = true;
+  lightPassDL->Add(std::move(drawGeoRC));
+  
+  ```
+
+  In this case we use a **DrawGeometryRC** that allows us to draw any kind of geometry to the screen, it is done through a render command once again to follow the pipeline of our engine so everything is properly synchronized and with no mishaps. 
