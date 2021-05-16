@@ -43,5 +43,5 @@ tags: [structure, imgui, ocornut, ui/ux, interface, gui]
   - Script Component.
 
 {: .box-error}
-**Error:** The engine will give you an error message and will not let you add a component that the entity already has, it is useless to try and do it, in case you try to add a compoennt and you see that nothing happens in the inspector window, check if the entity **already has that component**.
+The engine will give you an error message and will not let you add a component that the entity already has, it is useless to try and do it, in case you try to add a compoennt and you see that nothing happens in the inspector window, check if the entity **already has that component**.
 
