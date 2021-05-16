@@ -49,7 +49,7 @@ The engine will give you an error message and will not let you add a component t
 
 ### Lua Tab
 
-![Lua Window Tab](!https://i.imgur.com/5lBaewI.png)
+![Lua Window Tab](https://i.imgur.com/5lBaewI.png)
 
   I completely forgot to show the other tab that was next to the hierarchy tab due to the fps counter blocking the view of it, this is the lua tab of the engine, here you can see that you can either write code inside the text box in runtime and see the results, you have the logger in the center bottom part of the engine to support your actual scripting with prints to see that everything is working as expected.
   
