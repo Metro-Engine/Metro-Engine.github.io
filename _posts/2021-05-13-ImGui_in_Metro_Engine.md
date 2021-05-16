@@ -36,12 +36,21 @@ tags: [structure, imgui, ocornut, ui/ux, interface, gui]
  
   This means that every entity will have different/same components from the following ones:
 
-  - Mesh Component.
-  - Material Component.
-  - Rotation Component.
-  - Light Component.
-  - Script Component.
+  - **Mesh Component**: You can add this component to an entity to define which kind of mesh it will be using like for example a **quad**, **cube**, **sphere**, etc.
+  - **Material Component**: Depending if the engine is ran in **normal rendering** or **PBR** you will be able to change specific settings of the material for each entity.
+  - **Rotation Component**: If you ever want to make an entity rotate in a specific axis with a given speed, this component is ideal for that purpose.
+  - **Light Component**: A component utilized to determine if an entity is going to be a light emitter like for example a **pointlight**, **spotlight**, **directional light**.
+  - **Script Component**: Like in Unity, an entity can have a script that will be executed, this is present in the shape of a component.
 
 {: .box-error}
 The engine will give you an error message and will not let you add a component that the entity already has, it is useless to try and do it, in case you try to add a compoennt and you see that nothing happens in the inspector window, check if the entity **already has that component**.
 
+  
+
+### Lua Tab
+
+![Lua Window Tab](!https://i.imgur.com/5lBaewI.png)
+
+  I completely forgot to show the other tab that was next to the hierarchy tab due to the fps counter blocking the view of it, this is the lua tab of the engine, here you can see that you can either write code inside the text box in runtime and see the results, you have the logger in the center bottom part of the engine to support your actual scripting with prints to see that everything is working as expected.
+  
+  Aside from having the runtime option you can also create a file and run it through the engine as long as you deposit it in the `lua_scripts` folder of the engine and then insert the name of the script such as `HelloWorld` if the file was called `HelloWorld.lua`.
