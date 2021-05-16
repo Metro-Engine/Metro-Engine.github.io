@@ -53,7 +53,10 @@ tags: [rendering, forwardrendering, deferredrendering, opengl]
    
    `(Positions: Up-Left, Normals: Up-Right, Color: Middle)`
    
-  For example in our engine we have the following textures (_sheets of paper_) filled with information about positions, color(_albedo_) and normals. This allows us to do a second pass 
+  For example in our engine we have the following textures (_sheets of paper_) filled with information about positions, color(_albedo_) and normals. This allows us to do a second pass in which we use the g-buffer textures as outputs and we calculate the lighting per fragment. 
   
+  ![Deferred Geometry And Lighting Pass Process](https://i.imgur.com/HmbOUP3.png)
   
+  The advantage of deferred is that whatever fragment ends up in the G-Buffer is the actual information that ends up shown in the screen pixel, a depth test is already done and it is concluded which fragment to be the top-most one, implying that there is no data overwriting and no wasted calculations, everything is done precisely and to the point.
   
+  This means that the cost of the light calculatios is not `num_fragments * num_lights` anymore because this approach ensures that for each pixel processed in the lighting pass, the lighting is only calculated **once**.
