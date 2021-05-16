@@ -231,7 +231,7 @@ namespace Metro {
 
   You can see now that we first create the display list, we create the rendercommand and pass it the pertinent parameters and we later add it to the display list to finally at the end submit the list to the **main deque** that we have in our engine. Of course you can see that in the middle of this process we throw a clean screen render command in the middle so we can do another pass in the future with clean information.
   
-  ## Shader Specifics
+## Shader Specifics
   
   Now you might be wondering how do we capture this output through the shader and utilize it, so far we have only seen **CPU** code and we have not seen a single bit of **GLSL**, it is actually pretty simple, OpenGL after having everything binded correctly, you can just capture those based on their attachment number and use them in the shader with no problem. (_You need to remember that you are binding with textures_), this implies that for deferred to work efficiently you need to have **UVS** that you can safely pass to the shader through _attribute binding_ from the **VS shader** to the **FS shader**.
  
