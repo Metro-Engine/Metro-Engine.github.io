@@ -145,6 +145,49 @@ void main()
   {: .box-note}
 **Note:** We do not need to calculate all the three vectors, with only two of the vectors, one of them being the **normals** we can do a **cross product** `vec3 B = cross (N, T)`.
 
+ Now after we have the TBN matrix we can take two approaches, either taking the sampled normal from tangent space to world space using the TBN matrix or the opposite, using the inverse of the TBN to transform any vector to tangent space, the rule that we need to abide by is that **the calculations need to be in the same coordinate space** to avoid any kind of artifacts or weird / unexpected behavior.
  
+ In our specific case in Metro Engine we utilize the second option, we bring all the vectors to tangent space to do all the necessary calculations, this means that we first need to inverse the matrix before sending it to the fragment shader.
+ 
+```glsl
+
+in mat3 TBN_in;
+
+void main()
+{
+  mat3 inv_tbn = transpose(TBN_in);
   
+}
+
+```
+{: .box-note}
+  **Note:** The transpose of an orthogonal matrix equals the inverse of it.
   
+  And now we need to transform the necessary vectors `lighDir` and `viewDir` to tangent space.
+  
+```glsl
+
+in mat3 TBN_in;
+in vec2 in_uvs;
+
+void main()
+{
+  mat3 inv_tbn = transpose(TBN_in);
+  vec3 normal = texture(normalMap, in_uvs).rgb;
+  normal = normalize(normal * 2.0 - 1.0);
+  
+  vec3 lightDir = inv_tbn * normalize(lightPos - fragPos);
+  vec3 viewDir = inv_tbn * normalize(viewPos - fragPos);
+  // ...
+}
+
+```
+
+  And with this, we can calculate all the **lighting** variables in tangent space given that the normal is in tangent space too, it is a perfect fit for normal mapping to shine and show the technique fully working without caring about the rotation of the geometry/mesh.
+
+![Rotated Plane with Normal Mapping](https://learnopengl.com/img/advanced-lighting/normal_mapping_correct_tangent.png)
+
+  We extracted this technique from **LearnOpenGL** and all the images and mathematics done here are extracted from this website.
+
+
+
