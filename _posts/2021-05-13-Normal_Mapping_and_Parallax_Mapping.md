@@ -160,6 +160,7 @@ void main()
 }
 
 ```
+ 
 {: .box-note}
   **Note:** The transpose of an orthogonal matrix equals the inverse of it.
   
