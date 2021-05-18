@@ -161,6 +161,8 @@ void main()
 
 ```
  
+ Of course, we get the TBN from the vertex shader as input into the fragment shader to later transpose it to be able to transform any vector in the fragment shader to tangent space for the lighting calculations.
+ 
 {: .box-note}
   **Note:** The transpose of an orthogonal matrix equals the inverse of it.
   
