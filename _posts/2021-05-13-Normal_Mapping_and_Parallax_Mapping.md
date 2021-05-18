@@ -26,6 +26,42 @@ tags: [normals, normalmapping, parallax, parallaxmapping, technique, opengl]
   
   We do not need to forgive that whenever we are processing the texture through the shader we need to normalize in the `[0, 1]` space instead of the space in which they come `[-1, 1]` to be able to utilize them correctly. _Remember that we can represent the information from a normal texture through the **x, y, z** coordinates instead of the usual **RGB** that we do whenever we want to get information from the **diffuse**_.
 
+  This means that to be able to normalize the information from the texture in the given limits we do the following shader code:
+  
+    
+```glsl
+  vec3 transformed_normal = normal * 0.5 + 0.5; // ( This essentially transforms from [-1,1] to [0, 1] )
+```
+  This allows us to transform from a normal space coordinates to an RGB coordinate space, essentially allowings us to read it without having too much trouble with random normal artifacts. Now, to be able to utilize the normal map we need to sample it and use them for lighting calculations and this is done the following way:
+  
+  
+ ```glsl
+ uniform sampler2D normalMap;
+ 
+ in vec2 uvs;
+ 
+ void main()
+ {
+    normal = texture(normalMap, uvs).rgb
+    normal = normalize(normal * 2.0 - 1.0) // We convert them back to range [-1, 1]
+    
+    // [......] Proceed with the lighting calculations (Pointlight, Directional, Spotlight)
+ 
+ }
 
+```
 
+  This all will work perfectly if we have surface sof the geometry or a simple flat plane with normal mapping that is pointing to the `+Z` direction, in case we rotate it or make it point in any other direction, normal mapping gets ruined, because the **normals** will still be pointing to the `+Z` coordinates, think of it as normals being absolute towards the `+Z` direction no matter how much you rotate the geometry or mesh, this implies that the lighting is going to be done incorrectly and we have officially broken the technique.
+  
+  ![Z Positive Normals Issue](https://learnopengl.com/img/advanced-lighting/normal_mapping_ground_normals.png)
+  
+  Luckily we have a solution for this, to be able to keep the normals relative to the geometry / mesh we utilize what we call `tangent space`, this in essence brings the normals to a local space where they are relative to the individual triangles of the geometry, of course always pointing `+Z` but this time in local coordinates, implying that even if we rotate it, it is going to rotate in the **positive Z** coordinate taking into account the rotation of the mesh.
+  
+  To be able to transform from **tangent space** to **world space** and viceversa we need to be able to construct what we call a **TBN Matrix** to be able to utilize the inverse and the matrix itself to do the transformations of normals comfortably.
+  
+  As we know, the normals in **tangent space** point towards the direction of the surface, this leaves us knowing one piece of information, **the normal**, we are left out with more information that we need to discover, in this case the **bitangent** and the **tangent**. 
+  
+  ![TBN Coordinates](https://learnopengl.com/img/advanced-lighting/normal_mapping_tbn_vectors.png)
+  
+  
   
