@@ -187,7 +187,7 @@ void main()
 
 ![Rotated Plane with Normal Mapping](https://learnopengl.com/img/advanced-lighting/normal_mapping_correct_tangent.png)
 
-  We extracted this technique from **LearnOpenGL** and all the images and mathematics done here are extracted from this website.
+  We extracted this technique from **[LearnOpenGL](https://learnopengl.com/Advanced-Lighting/Normal-Mapping)** and all the images and mathematics done here are extracted from this website.
 
 
 
