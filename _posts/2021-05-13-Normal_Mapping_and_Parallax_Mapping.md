@@ -117,6 +117,8 @@ bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
 bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
 
 ```
+  With this you would already have all the necessary information to calculate the TBN matrix.
+
   {: .box-note}
 **Note:** You need to do the same process for the tangent and bitangent calculation for each triangle in your geometry, usually you would incorporate this piece of code in your **object loader** in your engine and store them in a **vector** so you can later **build** the **TBN matrix** and **pass it to the respective shader**.
 
