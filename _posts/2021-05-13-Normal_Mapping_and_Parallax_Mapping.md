@@ -117,12 +117,33 @@ bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
 bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
 
 ```
-  With this you would already have all the necessary information to calculate the TBN matrix.
+  With this you would already have all the necessary vectors to calculate the **TBN matrix**.
 
   {: .box-note}
 **Note:** You need to do the same process for the tangent and bitangent calculation for each triangle in your geometry, usually you would incorporate this piece of code in your **object loader** in your engine and store them in a **vector** so you can later **build** the **TBN matrix** and **pass it to the respective shader**.
 
+  You have two options here, you can construct the TBN here in the **CPU** or you can do it in the respective **shader**, in our case we have it built in the shader itself and you would pass the information through vertex attributes to the vertex shader as following:
+  
+```glsl
 
+layout (location = 0) in vec4 a_position;
+layout (location = 1) in vec4 a_normal;
+layout (location = 2) in vec4 a_uvs;
+layout (location = 3) in vec4 a_tangent;
+layout (location = 4) in vec4 a_bitangent;
+
+void main()
+{
+  vec3 T = normalize(vec3(u_m_matrix * a_tangent));
+  vec3 B = normalize(vec3(u_m_matrix * a_bitangent));
+  vec3 N = normalize(vec3(u_m_matrix * a_normal));
+  mat3 TBN = mat3(T, B, N);
+}
+
+```
+  
+  {: .box-note}
+**Note:** We do not need to calculate all the three vectors, with only two of the vectors, one of them being the **normals** we can do a **cross product** `vec3 B = cross (N, T)`.
 
  
   
