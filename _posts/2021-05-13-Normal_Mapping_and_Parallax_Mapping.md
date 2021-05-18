@@ -63,5 +63,65 @@ tags: [normals, normalmapping, parallax, parallaxmapping, technique, opengl]
   
   ![TBN Coordinates](https://learnopengl.com/img/advanced-lighting/normal_mapping_tbn_vectors.png)
   
+  The issue here is that we do not have any other piece of information other than the normal, it is not like we can magically do a **cross product** and get it done, this means that we will need to do some simple math and it is the following one:
+  
+  ![Normal Mapping TBN Math](https://learnopengl.com/img/advanced-lighting/normal_mapping_surface_edges.png)
+  
+  You first need to calculate the edges and delta UV coordinates so you can get the desired vectors, to ease out the mathematics we will do a manual approach so it feels more integral, if we had the following positions, normals and texture coordinates:
+  
+ ```cpp
+  glm::vec3 pos1(-1.0f, 1.0f, 0.0f);
+  glm::vec3 pos2(-1.0f, -1.0f, 0.0f);
+  glm::vec3 pos3(1.0f, -1.0f, 0.0f);
+  glm::vec3 pos4(1.0f, 1.0f, 0.0f);
+  
+  // tex coords
+  glm::vec2 uv1(0.0f, 1.0f);
+  glm::vec2 uv2(0.0f, 0.0f);
+  glm::vec2 uv3(1.0f, 0.0f);
+  glm::vec2 uv4(1.0f, 1.0f);
+ 
+ // normal vector +Z
+ glm::vec3 nm(0.0f, 0.0f, 1.0f);
+ 
+ ```
+ 
+  We need to calculate the delta UV coordinates which correspond to `ΔU2` and `ΔV2` which is doing a substraction to the positions:
+  
+ ```cpp
+  glm::vec2 deltaUV1 = uv2 - uv1;
+  glm::vec2 deltaUV2 = uv3 - uv1;
+  
+```
+  
+  You can see that `deltaUV1` corresponds to the horizontal `ΔU2` delta and the `deltaUV2` corresponds to the vertical `ΔV2` delta, afterwards the next calculations we will need to do is the edges to be able to calculate the triangle, in this case `E1` and `E2`.
+  
+
+ ```cpp
+  glm::vec3 edge1 = pos2 - pos1;
+  glm::vec3 edge2 = pos3 - pos1;
+  
+```
+  
+  Once again we can correlate the horizontal and vertical edges with `E1` (_edge1_) and `E2` (_edge2_) respectively, this way we can see that with the edge vectors we essentially have constructed a triangle, having the delta for UVs and the edges of the triangle we can start calculating the vectors we want which in this case are the **tangents** and **bitangents**.
+  
+```cpp
+float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+
+```
+  {: .box-note}
+**Note:** You need to do the same process for the tangent and bitangent calculation for each triangle in your geometry, usually you would incorporate this piece of code in your **object loader** in your engine and store them in a **vector** so you can later **build** the **TBN matrix** and **pass it to the respective shader**.
+
+
+
+ 
   
   
