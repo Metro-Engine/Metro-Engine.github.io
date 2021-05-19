@@ -299,3 +299,52 @@ if (in_uvs.x > 1.0 || in_uvs.y > 1.0 || in_uvs.x < 0.0 || in_uvs.y < 0.0)
   As you can see, the depth is split in interpolations of 0.2 and what we basically do is traverse from top to bottom depth-wise for each layer we compare the **sampled depth value** to the depth value stored in the **depthmap**, if it is less  than the current depth map value, it means that the layer's segment of the `P` vector is not below the surface, this process is continued until you reach a point as previously mentioned where the sampled depth is less than the value of the current layer.
   
   To implement this technique we only have to change a few things in the `ParallaxMapping` function that we created in our last **fragment shader** because we have all the information needed, we just need to make the code a bit more complex.
+
+```glsl
+vec2 ParallaxMapping(vec2 texCoords)
+{ 
+	//Clculate tangent space coords
+	vec3 tangentSpaceCameraPos = transpose(TBN) * u_camerapos.xyz;
+	vec3 tangentSpaceFragPos = transpose(TBN) * worldSpacePosition.xyz;
+	vec3 viewDir =  normalize(tangentSpaceCameraPos - tangentSpaceFragPos); // In this case we opted to move the calculation of the tangent space view dir inside the function
+
+    const float minLayers = 8.0;
+	const float maxLayers = 32.0;
+	float numLayers = mix(minLayers, maxLayers, max(dot(vec3(0.0, 0.0, 1.0), viewDir), 0.0)); 
+	// calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    vec2 P = viewDir.xy * u_parallax_height_multiplier; 
+    vec2 deltaTexCoords = P / numLayers;
+
+	// get initial values
+	vec2  currentTexCoords     = texCoords;
+	float currentDepthMapValue = 1 - texture(u_texture_height, currentTexCoords).r;
+  
+	while(currentLayerDepth < currentDepthMapValue)
+	{
+		// shift texture coordinates along direction of P
+		currentTexCoords -= deltaTexCoords;
+		// get depthmap value at current texture coordinates
+		currentDepthMapValue = 1 - texture(u_texture_height, currentTexCoords).r;  
+		// get depth of next layer
+		currentLayerDepth += layerDepth;  
+	}
+
+	return currentTexCoords;
+
+} 
+
+```
+  We should get a similar effect to something like this:
+
+![Stepped Parallax Mapping](https://user-images.githubusercontent.com/48097484/118890267-af77cc80-b8fe-11eb-8f11-97998e29908b.png)
+
+ {: .box-note}
+**Note:** Notice how the actual samples of the texture start repeating until they reach the specified goal and then they stop, this gives a false illusion of **depth**.
+
+  This technique is the preferred approach whenever you want to improve the realism of your objects without adding extra geometry and we recommend it, you learn a lot about **tangent space** and how you can bring vectors to tangent space and world space back and forth to do the necessary calculations, it is a worth the try.
+  
+  Once again, all the resources and images were taken from [LearnOpenGL](https://learnopengl.com/Advanced-Lighting/Parallax-Mapping) thanks to this website we were able to explain the technique in an easier manner and hopefully this was helpful!
