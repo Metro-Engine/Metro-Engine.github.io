@@ -194,5 +194,108 @@ void main()
 
 ## Parallax Mapping
 
+(Simulating the geometry based on the height map)
+As previously mentioned, normal mapping was a technique that added extra realism to a flat surface, using the **lighting** system we gave the illusion that there is depth. This does not only stop there, we have another technique called "**Parallax Mapping**" and it is the next step after doing normal mapping, it is specifically related to the **displacement mapping** family and it is also used to give an illusion or effect that there is a given displacement in a flat surface through **height maps**.
+ 
+ Usually you would utilize a plane with `1000` vertices and use a height map to tesselate and displace each one of the vertex to add that extra depth and make a geometry even more realistic regardless of the lighting. 
+ 
+ We can notice that this can get out of control pretty easily, given that each geometry needs to have around `1000` vertices that will be displaced just to make it look more realistic, it quickly turns out horrendous for performance because it is expected that there is **not** going to be only that geometry, there are a lot more things running in an engine in a fully fleshed scene, implying that we need to go for an optimized approach to avoid reduction in performance.
+ 
+ That is why this technique is here, instead of using actual **geometry vertices** to displace and create depth for our geometries, we will be utilizing the texture alongside the **height map** to create the illusion that there is depth in a flat surface with little to no geometry / vertices like for example a quad that consists of two triangles.
+ 
+ 
+ This is what a normal height map would look like:
+ 
+ ![Height Map Example](https://learnopengl.com/img/advanced-lighting/parallax_mapping_height_map.png)
+ 
+  Now that we have the information about the height at which the geometry shouldbe displaced, we need to alter the texture coordinates of the quad in such a way to make it look like there is depth, of course we need to take into consideration the **camera** formerly known as the **view direction** to be able to do the calculations correctly like in the following image:
+ 
+![Example Displacement Texture](https://user-images.githubusercontent.com/48097484/118874719-80a42b00-b8eb-11eb-8484-485949e62621.png)
 
+  We calculate the vector `V` that ends up colliding with the plane in the point `A` and if we had the height map projected onto the quad, given the specific **direction** we would be colliding in point `B`.
+  
+  Now, you might be thinking, we have the `viewDir` and the point `A` from which we get the `viewDir`, how do we calculate the point B, because we do not have an apparent way to calculate this point B to create an effect of displacement, we should be technically drawing the pixel which corresponds to the vertical of point **B**.
+  
+  To be able to calculate this point we need to do a **texture coordinate offset** it is as simple as offseting the UVs with which we are reading with a small offset that takes into consideration the **height map** values what we have available to us.
+  
+  As we have point `A` we can know the projected value onto the height map which in this case is `H(A)`, after we get that projected point and its length, we can project it onto the `viewDir` and get an **approximation** on the desired point `B`, the following image shows how its done:
 
+![Texture Coordinate Offset Example](https://user-images.githubusercontent.com/48097484/118876205-476cba80-b8ed-11eb-8a7e-39affa44a206.png)
+
+  Essentially what we are doing is scaling the vector `V` by the height at the fragment position `H(A)` so we can get the approximated point `H(P)` because it is scaled onto the `viewDir` which is essentially close enough to the point `B`.
+  
+  Although this is the rough **approximation**, it is still very crude and in some edge cases of displacement we might end up **overpassing** the desired point and project an undesired height and we might end up with artifacts. This next image exemplifies it:
+  
+  ![Crude Height Map Projection Case](https://user-images.githubusercontent.com/48097484/118876960-2789c680-b8ee-11eb-9a4a-576bc569227a.png)
+
+  As we can see the projected point `H(P)` in the texture plane is overpassing the desired height `B`, proving the point that we can end up with an undesired effect depending on the height map. Another **edge case** is whenever the plane is **rotated**, this practically causes the `viewDir` to not be correct and relative to the forward of the plane to be able to project the height correctly.
+  
+### Correct Way to do Parallax Mapping
+  
+  To be able to do this technique correctly and avoiding the previously mentioned edge case of rotation and sometimes the height map doing a weird **overpass** we need to do two things.
+  
+  - To be able to fix the overpass that happens depending on the height map, we need to utilize the **inverse** of the height map, it is in general easier to fake depth than doing it the other way around and the example looks like the following now:
+
+![Inverted Height Map](https://user-images.githubusercontent.com/48097484/118878819-4721ee80-b8f0-11eb-837b-ec598ed59fd1.png)
+
+  We can see that we still have a point `A` and desired point `B` with a direction vector `P`, this time for us to be able to calculate the **texture offset** we just **substract** the vector `V` in this case it is the `viewDir` from the camera to the fragment with the point `A`, this means that the calculations are even simpler because this time we are not obtaining a **height** value, we are doing it the other way around, we are obtaining **depth** values and this is done by substracting the sampled heightmap value from `1.0f` and on or by simply **inverting** the texture values in an image-editing software such as `GIMP`, `PHOTOSHOP`, etc.
+  
+  
+  Now to be able to fix the other issue we were talking about, the **rotation**, we need to be able to convert the `viewDir` to a local coordinate space that takes into consideration the rotation of the geometry and normals, doesn't this sound **familiar** to you ?
+  
+  (_I mean, you essentially read about normal mapping like just a tad bit ago, you should know the answer..._)
+  
+  Yeah, of course! **Tangent Space**! Correct, we need to also utilize the **bitangent** and **tangent** to be able to bring the `viewDir` to tangent space to be able to do the calculations in the same coordinate space and so they are relative to the given rotation, just like normal mapping but this time without doing any lighting calculations in between!
+  
+  As far as we can remember, we did pass the **TBN Matrix** to the **fragment shader**, so we already have a template from which we can expand and work on parallax mapping to make the geometry look even more **realistic** and appealing! Given the following fragment shader code we will be doing the following:
+  
+  ```glsl
+
+in mat3 TBN_in;
+in vec2 in_uvs;
+
+// NEW FUNCTION!
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
+{
+  float height = texture(heightMap, in_uvs).r;
+  vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
+  return in_uvs - p; // Remember the texture offset we were talking about?
+}
+
+void main()
+{
+  mat3 inv_tbn = transpose(TBN_in);
+  vec3 normal = texture(normalMap, in_uvs).rgb;
+  normal = normalize(normal * 2.0 - 1.0);
+  
+  vec3 lightDir = inv_tbn * normalize(lightPos - fragPos);
+  vec3 viewDir = inv_tbn * normalize(viewPos - fragPos);
+  // ...
+}
+
+```
+  Some stuff needs to be explained here in the previous newly added function, we can see that we are clearly **sampling** from the height map texture that we have previously mentioned, considering that it is the **inverted** version of the height map. Afterwards we do what we have previosly have talked about, given the tangent space coordinates of the converted viewDir, we take the **x** and **y** components and then divide them by its own **z** component to later scale it by `H(A)` which from the previous drawings we know is the projected height map onto the displacement map.
+  
+  Lastly we introduce a new variable called **height_scale** which essentially servers as a control variable for the parallax effect to tone up/down the height of the effect we are trying to achieve. With a `height_scale` of `0.1f` we achieve an effect like the following for parallax mapping:
+  
+  ![image](https://user-images.githubusercontent.com/48097484/118885262-d67ed000-b8f7-11eb-9a60-05425c46bb51.png)
+
+  As you can observe in the image in the right-most part we have the combined effect of normal mapping + parallax mapping, but you might notice that it is not perfectly placed, we need to trim the edges a bit so it has a perfect quad shape, this often happens because we **oversample** the texture given the **displacement map** so we need to constraint it in the `[0, 1]` range and it is done the following way:
+  
+```glsl
+in_uvs = ParallaxMapping(in_uvs, viewDir);
+if (in_uvs.x > 1.0 || in_uvs.y > 1.0 || in_uvs.x < 0.0 || in_uvs.y < 0.0)
+  discard;
+```
+
+### Stepped Parallax Mapping
+
+  To be able to do a more precise calculation on the previous parallax mapping technique we can do what we call a **steep parallax mapping** so we can approach the `P` value towards the desired point `B`  we already know.
+  
+  Instead of doing only one calculation of `P` we take various samples of the same point towards the direction `V` which is the `viewDir` towards depth, because remember, we are utilizing an **inverted height map** and we are now speaking in terms of depth instead of height, essentially you do a "_linear interpolation_" on the vector `P` until the sampled depth value is less than the depth value of the current layer, becuase we cut the depth in different depth heights like in the image shown here:
+  
+  ![Split depth for stepped parallax mapping](https://user-images.githubusercontent.com/48097484/118889547-899df800-b8fd-11eb-8a81-31de3f74f3dc.png)
+
+  As you can see, the depth is split in interpolations of 0.2 and what we basically do is traverse from top to bottom depth-wise for each layer we compare the **sampled depth value** to the depth value stored in the **depthmap**, if it is less  than the current depth map value, it means that the layer's segment of the `P` vector is not below the surface, this process is continued until you reach a point as previously mentioned where the sampled depth is less than the value of the current layer.
+  
+  To implement this technique we only have to change a few things in the `ParallaxMapping` function that we created in our last **fragment shader** because we have all the information needed, we just need to make the code a bit more complex.
