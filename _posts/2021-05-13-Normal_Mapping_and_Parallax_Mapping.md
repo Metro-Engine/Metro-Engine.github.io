@@ -192,5 +192,7 @@ void main()
 
   We extracted this technique from **[LearnOpenGL](https://learnopengl.com/Advanced-Lighting/Normal-Mapping)** and all the images and mathematics done here are extracted from this website.
 
+## Parallax Mapping
+
 
 
