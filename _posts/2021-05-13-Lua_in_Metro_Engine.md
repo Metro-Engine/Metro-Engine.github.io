@@ -33,4 +33,32 @@ It is efficient whenever doing a lot of extracts and inserts to the latter part 
   
 ### Lua 
   
+  With that said, we now need to clarify that all the communication done with **Lua** and **C** is done through a `virtual stack`, essentially what you do is push data from C for global variable definitions, tables, functions and function arguments, this causes those variables to be available in the specific lua script, this means that whenever we want to call a C function, we need to recover the arguments and push the result back again to **Lua**.
   
+  To be able to start working with **Lua** we first need to declare our `lua_State` variable, this variable defines the context and scripts with which we run **Lua** in our engine.
+  
+```cpp
+
+  lua_State *L = luaL_newstate();
+
+```
+  After creating this variable, we also do not need to forgive that we can open **axuiliary** libraries that come with **Lua** as a support for the scripting experience such as the **math library** and the **string library**.
+  
+```cpp
+
+  lua_State *L = luaL_newstate();
+  lua_openlibs(L); // Open all libraries
+  
+  // Optionally if we decided to open specific libraries we could utilize this functions instead of lua_openlibs(L);
+  luaopen_math(L);
+  luaopen_string(L);
+
+```
+
+  At the end of the execution of the engine we do not need to forgive to close the **Lua Virtual Machine**(_Lua VM_) and it is done with the following function:
+  
+  ```cpp
+    lua_close(L);
+  ```
+
+
