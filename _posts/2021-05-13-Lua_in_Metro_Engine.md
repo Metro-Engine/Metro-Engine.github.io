@@ -61,4 +61,50 @@ It is efficient whenever doing a lot of extracts and inserts to the latter part 
     lua_close(L);
   ```
 
+  Now that we konw how to actually open a **Lua VM** state, we need to learn how to communicate between the script and C. For example if we want to do a simple multiplication function we would do the following with C:
+  
+```cpp
 
+int multiplication(int a, int b) {
+  return a * b;
+}
+
+```
+  Pretty simple right? Now, how would we establish a connection between lua and this code so we can use this function internally in a **lua script**? Well, it is pretty easy, as I have mentioned previously, a stack is the middle point of communication between lua and C, so we will be utilizing it.
+  
+  Every function that is going to be utilized in Lua needs to have only **one arguement** and it has to be the **lua_State** which in essence is the **context** of **lua**. So we proceed with the following code to adapt the function to lua:
+  
+```cpp
+  
+int multiplication(lua_State *L) {
+  int a = luaL_checkinteger(L, 1); // Notice how we pass the context and as a second arguement we check the specific position in the stack, in this case position 1.
+  int b = luaL_checkinteger(L, 2); // Likewise for this, we instead of checking the 1st, check the 2nd.
+
+  // # We store the result in a special typedef value for lua integers:
+  lua_Integer c = a * b; 
+  
+  // # We push the variable to the stack.
+  lua_pushinteger(L, c);
+
+  7/ # Exit Code Successfully, otherwise we error.
+  return 1;
+}
+
+
+```
+  
+  To clarify, if we called the following function `multiplication(5, 5)` the following would happen in the lua stack:
+  
+![Multiplication Stack Example](https://i.imgur.com/6mL9y4k.png)
+
+  Remember that this example is executed from **Lua**, implying that the exemplified function from lua pushes the numbers into the stack so in C they can be `checked` and returned back to the stack, essentially doing a `LUA >> C >> LUA` communication.
+  
+  We can see that the indexing of the stack is pretty easy, both numbers are deposited at `position 1` and `position 2` and we utilize the `luaL_checkinteger` function to be able to check if those numbers are integers so we can later capture them in variables and utilize them to do the operations in **C**, afterwards we push the results in the stack, ideally the variable above would get returned as a `luaL_integer`.
+  
+  Afterwards we compute the result and push the given **integer** to the stack in the next position available because we have **not** cleaned up on ourselves, so the other two numbers, `(a, b)` still stay in their respective positions, so this means that the result will be pushed to `position 3` resulting in the following stack:
+  
+  ![Resultant Stack for Multiplication Operation](https://i.imgur.com/FTG41ao.png)
+  
+  So this way we have essentially got an efficient communication from Lua to C and back to Lua, the number `25` in this case would be available in the lua script to be utilized for whatever operation it is needed for.
+  
+  
