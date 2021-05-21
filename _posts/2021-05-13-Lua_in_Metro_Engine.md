@@ -86,7 +86,7 @@ int multiplication(lua_State *L) {
   // # We push the variable to the stack.
   lua_pushinteger(L, c);
 
-  7/ # Exit Code Successfully, otherwise we error.
+  // # Exit Code Successfully, otherwise we error.
   return 1;
 }
 
@@ -106,5 +106,93 @@ int multiplication(lua_State *L) {
   ![Resultant Stack for Multiplication Operation](https://i.imgur.com/FTG41ao.png)
   
   So this way we have essentially got an efficient communication from Lua to C and back to Lua, the number `25` in this case would be available in the lua script to be utilized for whatever operation it is needed for.
+  
+  Now you might be wondering, how do we utilize this function in lua, as far as we know there is no custom `multiplication` function... We need to **register** it to the given lua context so it is available for use in the lua script. This means that we will be utilizing the function `lua_register(luaL_state*, const char*, lua_CFunction f)` function, from the signature we can figure out that it is pretty easy to utilize, in the case of the multiplication we can do the following registration:
+  
+```cpp
+int multiplication(lua_State *L) {
+  int a = luaL_checkinteger(L, 1);
+  int b = luaL_checkinteger(L, 2);
+
+  
+  lua_Integer c = a * b; 
+  
+  
+  lua_pushinteger(L, c);
+
+  
+  return 1;
+}
+
+  // #Register the function
+  lua_register(L, "multiplication", multiplication);
+
+```
+  After we have the function registered to the current context, we will be able to utilize it inside a script as shown in the previous example, we can do a `multiplication(5, 5)` in lua and get a resultant `25` as the return value of the given function. Now we can see that something is **lacking**, our stack is a complete **disaster**, so far in the previous example we have learnt how to **push** numbers to the stack, but we need to learn to **clean up** after ourselves and learn how to **pop** irrelevant or unnecessary information so whenever we work with the stack once again the actual stack is clean and ready to go, it is a good **habit** to clean up the stack every time you utilize it for an operation.
+  
+  Given the **previous stack** that we did **not** clean up, we can do the following operations to clean it up:
+  
+  ![Resultant Stack for Multiplication Operation Example #2 Pop](https://i.imgur.com/FTG41ao.png)
+  
+```cpp
+
+  lua_pop(L, 1); // We extract number 5.
+  lua_pop(L, 1); // We extract number 5.
+  
+```
+  As you can see, we only need to leave out the result of the actual operation in the stack so **lua** can utilize it in the script! This means that the following multiplication code would be the following:
+  
+  ```cpp
+int multiplication(lua_State *L) {
+  int a = luaL_checkinteger(L, 1);
+  int b = luaL_checkinteger(L, 2);
+
+  
+  lua_Integer c = a * b; 
+  
+  lua_pop(L, 1);
+  lua_pop(L, 1);
+  
+  // # The resultant number c would be deposited in position 1 of the stack:
+  lua_pushinteger(L, c);
+
+  return 1;
+}
+
+  lua_register(L, "multiplication", multiplication);
+
+```
+
+  So far so good, this is a rather more manual approach to cleaning the stack, we can always utilize the `lua_gettop(L)` function to get the highest position in the stack, in this case we would always capture `position 1`, because remember whenever you extract something from the **stack**, the 2nd becomes the 1st and so forth, indexes do change.
+  
+  We can also **negatively** index the stack and work the **inverse** way, so for example:
+  
+```cpp
+
+  lua_pushinteger(L, 40);
+  lua_pushinteger(L, 50);
+  lua_pushinteger(L, 60);
+  
+  // # Would look like:
+    // 40; -3
+    // 50; -2
+    // 60; -1
+
+  // And if we popped number 2 from the stack, it should remove number 50:
+  
+  lua_pop(L, -2);
+  
+  // # Would look like:
+    // 40; -2
+    // 60; -1
+  
+  // In the normal order of the stack the above stack would look like this:
+  
+    // 40; 1
+    // 60; 2
+  
+
+```
+  You can get the idea of how to push and pop in the **normal order** and the **inverse order**, whichever suits you the most is the one you should use, in terms of functionality it is pretty much the **same**.
   
   
