@@ -5,11 +5,27 @@ subtitle: How does Metro Engine implement ECS?
 tags: [ecs, entity, data-oriented]
 ---
 
-Under what circumstances should we step off a path? When is it essential that we finish what we start? If I bought a bag of peanuts and had an allergic reaction, no one would fault me if I threw it out. If I ended a relationship with a woman who hit me, no one would say that I had a commitment problem. But if I walk away from a seemingly secure route because my soul has other ideas, I am a flake?
+## What is ECS?
 
-The truth is that no one else can definitively know the path we are here to walk. It’s tempting to listen—many of us long for the omnipotent other—but unless they are genuine psychic intuitives, they can’t know. All others can know is their own truth, and if they’ve actually done the work to excavate it, they will have the good sense to know that they cannot genuinely know anyone else’s. Only soul knows the path it is here to walk. Since you are the only one living in your temple, only you can know its scriptures and interpretive structure.
+  In game development we have heard about **Entity Component Systems** (_ECS_), there are numerous engines such as **Unreal Engine** and **Unity** that do utilize this system and it is a different ways to organize the data in your engine.
+  
+  Since a lot of time whenever we developed an engine we would follow an inheritance approach organization of data, **object oriented programming** is what takes us into this journey thanks to **inheritance** and **polymorphism**.
+  
+### The Two Problems (Flexibility & Misuse Of Cache)  
 
-At the heart of the struggle are two very different ideas of success—survival-driven and soul-driven. For survivalists, success is security, pragmatism, power over others. Success is the absence of material suffering, the nourishing of the soul be damned. It is an odd and ironic thing that most of the material power in our world often resides in the hands of younger souls. Still working in the egoic and material realms, they love the sensations of power and focus most of their energy on accumulation. Older souls tend not to be as materially driven. They have already played the worldly game in previous lives and they search for more subtle shades of meaning in this one—authentication rather than accumulation. They are often ignored by the culture at large, although they really are the truest warriors.
+  The issue here is that there are two huge problems with this system, one of them being a problem with **flexibility** and the second one is the **not** so obvious **misuse of cache** which is not that apparent at first sight but really helps in performance in general. Image we had the following hierarchical structure for classes:
+  
+  ![Class Hierarchy Example #1](https://i.imgur.com/yUywn4D.png)
 
-A soulful notion of success rests on the actualization of our innate image. Success is simply the completion of a soul step, however unsightly it may be. We have finished what we started when the lesson is learned. What a fear-based culture calls a wonderful opportunity may be fruitless and misguided for the soul. Staying in a passionless relationship may satisfy our need for comfort, but it may stifle the soul. Becoming a famous lawyer is only worthwhile if the soul demands it. It is an essential failure if you are called to be a monastic this time around. If you need to explore and abandon ten careers in order to stretch your soul toward its innate image, then so be it. Flake it till you make it.
+  As you can see we have a base class `Humanoid` from which two other classes, `Monster` and `Human` inherit, and from there we have another two that inherint from the previously mentioned classes and those are `Orc` and `Knight`.
+  
+  Now, you might think that this is a very stable structure for a game, right? It is done the usual way, through inheritance, now think about this:
+  
+- What if we want to have an Orc that wants to be a Knight?
+- What if we want to have a Knight change his racial to Orc?
 
+  This would mean that we have a pretty **static** structure that for us to be able to change we need to once again abstract it, re-organize it and lay down an even more solid base, we pretty much need to predict that such thing can happen.
+
+  Another one of the problems is the **misuse of cache**, if we had a personal `Update()` method per each **object** and it updated their position, velocity, acceleration, etc, logically what we would do is iterate over **each and every single** object in our engine and call their `Update()` method to update the values of each individual object, take care that each individual object here is like an individual **container** that contains their own information.
+  
+  For us to be able to update every single one of the objects, we would need to be **constantly loading** all the different values separatedly, position, velocity, acceleration, etc. As you can see, per each new object we are not utilizing cache at all, usually the perfect workflow here is to pack up all the positions from all objects and process and update them all, in this sense we utilize cache to gain speed and performance and we avoid retrieving information from RAM >> CPU >> RAM constantly, we pack all the necessary information, bring it to CPU's Cache and reiteratively utilize it there without the need to be constantly loading and unloading the cache just because we do the data organization wrong.
