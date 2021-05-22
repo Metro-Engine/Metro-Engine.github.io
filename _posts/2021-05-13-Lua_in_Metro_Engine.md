@@ -35,10 +35,22 @@ It is efficient whenever doing a lot of extracts and inserts to the latter part 
   
   With that said, we now need to clarify that all the communication done with **Lua** and **C** is done through a `virtual stack`, essentially what you do is push data from C for global variable definitions, tables, functions and function arguments, this causes those variables to be available in the specific lua script, this means that whenever we want to call a C function, we need to recover the arguments and push the result back again to **Lua**.
   
-  To be able to start working with **Lua** we first need to declare our `lua_State` variable, this variable defines the context and scripts with which we run **Lua** in our engine.
+  To be able to start working with **Lua** we first need to declare our `lua_State` variable, this variable defines the context and scripts with which we run **Lua** in our engine and in an actual `.h` file we need to deploy the necessary **lua header files**.
   
 ```cpp
+// # in a .h where you will be declaring lua c api code:
+extern "C" {
+  #include "lua.h"
+  #include "lauxlib.h"
+  #include "lualib.h"
+}
 
+ // [ ... ]
+
+```
+  
+```cpp
+  // # Creation of a lua state:
   lua_State *L = luaL_newstate();
 
 ```
@@ -194,5 +206,100 @@ int multiplication(lua_State *L) {
 
 ```
   You can get the idea of how to push and pop in the **normal order** and the **inverse order**, whichever suits you the most is the one you should use, in terms of functionality it is pretty much the **same**.
+  
+  Now the last thing left out for the finish up with the basic functionality to communicate between **lua** and **C** is the calling of a **lua function** in C with arguements and a return value. If you had the following lua script with the given function:
+  
+```lua
+-- script0.lua
+function my_function(a, b)
+  return a * b;
+end
+```
+  It is a pretty simple function that once again, does the same functionality as the `multiplication(a, b)` function we had in **C** but this time we have it declared in **Lua** and we want to use it in our **C** code in the engine.
+  
+  For this to be possible aside from using the stack to communicate we will be introducing a new function called `lua_pcall(lua_State *L, int nargs, int nresults, int errfunc)`, as you can see this function is pretty easy to utilize, we pass as first arguement the given **lua context**, the number of arguements that the function has, the expected returns (_in lua you can do a return with multiple values_) and an **error function** in case the operation is not a **success**.
+  
+  To remark we need to consider that every function declared plainly in a **lua script** is in the **global scope** of the script, this means that we can utilize a function called `lua_getglobal(lua_State *L, const char *functionName)` that will literally retrieve the pointer to that function for you to utilize it and call it from **C**.
+  
+  To be able to run the given function in C we do the following piece of code:
+  
+```cpp
+int main(int argc, char ** argv) {
+  
+  lua_State *L = luaL_newstate();
+  luaL_openlibs(L);
+  
+  // # luaL_dofile (lua_State *L, const char *filename); --> Loads and runs the given file, if it returns 0 there are no errors otherwise 1 is returned.
+  if (luaL_dofile(L, "script0.lua") == LUA_OK) {
+    lua_pop(L, lua_gettop(L)); // You pop the value 0 or 1 for successful or unsuccessful execution of the given file depending on if it was found or not.
+  }
+  
+  // # We retrieve the function "my_function"
+  lua_getglobal(L, "my_function"); // # This function inserts the function ptr in the stack.
+  lua_pushinteger(L, 2); // # First Arguement
+  lua_pushinteger(L, 5); // # Second Arguement
+  
+  // # As we have previously mentioned, we will be using lua_pcall to execute the function safely in the C environment:
+  if (lua_pcall(L, 2, 1, 0) == LUA_OK) {
+      
+      // # Check if the return is an integer:
+      if (lua_isinteger(L, -1)) {
+      
+        // # If it is an integer, convert the return value from lua typedef to integer:
+        int result = lua_tointeger(L, -1);
+        
+        // # Pop the return value [Clean the stack]
+        lua_pop(L, 1);
+        printf("Result: %d\n", result);
+      
+      }
+      // # Remove function from stack:
+      lua_pop(L, lua_gettop(L));
+      
+  }
+  lua_close(L);
+  
+}
+
+```
+
+  In essence this would be the process that you would follow to be able to **call** a **lua function** from **C** without having too much trouble, in this previous example you learnt how to retrieve global variables and functions and utilize them at your will, executing a lua file, checking if the returned value is an integer, converting from lua typedefs to C typedefs and using the `lua_pcall` function to execute the function with extra safe measures.
+  
+### LUA API in Metro Engine
+  
+  Now you can guess that **most** of our **LUA API** is built around this basic concepts explained above, this means that our API to communicate with our graphic backend and all the nifty features that our engine has are built on this foundation, of course we have not explained anything about the **strongest advantage** of lua which in this case is **tables** but I guess you can do a bit of self research [here](https://www.lua.org/pil/24.html) to learn all the necessary to be able to integrate more complex behaviors, with only what has been shown here is enough to build a rather simplistic but **useful** API that any user can use in **LUA** and in **C**.
+  
+```cpp
+// # Metro Engine User API:
+
+int CreateCube(lua_State* L);
+int CreateSphere(lua_State* L);
+int CreateMonkey(lua_State* L);
+
+int printStuff(lua_State* L);
+
+int SetPosition(lua_State* L);
+int SetRotation(lua_State* L);
+int SetScale(lua_State* L);
+int SetTransform(lua_State* L);
+
+int SetRoughness(lua_State* L);
+int SetMetallic(lua_State* L);
+
+int SetRotationSpeed(lua_State* L);
+int SetRotationAxis(lua_State* L);
+
+int SetParent(lua_State* L);
+
+int SetTexture(lua_State* L);
+int CreateTexture(lua_State* L);
+
+int SetColor(lua_State* L);
+
+int ClearScene(lua_State* L);
+
+
+
+```
   
   
