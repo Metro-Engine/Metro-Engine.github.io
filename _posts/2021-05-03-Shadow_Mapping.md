@@ -45,10 +45,10 @@ tags: [shadow, texture, lighting, engine]
 ```cpp
 	for (u32 i = 0; i < kMaxDirectionalLights; i++)
 	{
-		char name[20];
-		sprintf(name, "ShadowMapTexture%d", i);
-		u32 shadowMapDepthTex = tb.createEmptyTexture(glm::vec2(kScreenWidth, kScreenHeight), 4, Texture::kInternalType_Float, name);
-		gpum->shadowMapDepthRender_[i].AddDepthAttachment(shadowMapDepthTex, false);
+			char name[20];
+			sprintf(name, "ShadowMapTexture%d", i);
+			u32 shadowMapDepthTex = tb.createEmptyTexture(glm::vec2(kScreenWidth, kScreenHeight), 4, Texture::kInternalType_Float, name);
+			gpum->shadowMapDepthRender_[i].AddDepthAttachment(shadowMapDepthTex, false);
 	}
 
 ```
@@ -57,7 +57,7 @@ tags: [shadow, texture, lighting, engine]
   
 ```cpp
 
-RenderSystem* rs = coordinator_.GetSystem<RenderSystem>();
+	RenderSystem* rs = coordinator_.GetSystem<RenderSystem>();
   std::vector<LightHandler> shadowGeneratingLights = sceneDirectionalLights_;
   std::vector<glm::mat4> lightViewMatrices;
   std::vector<glm::mat4> lightProjectionMatrices;
@@ -145,11 +145,11 @@ rs->shadowMapPass_ = true;
   
 ```cpp
 	if (shadowMapPass_) {
-        ScopedPtr<RenderCommand> vpRC;
-        UniformViewProjectionRC* matRCitself = vpRC.AllocT<UniformViewProjectionRC>();
-        matRCitself->SetViewProjection(vm_, pm_, "u_light_v_matrix", "u_light_p_matrix");
-        drawObjDisplayList->Add(std::move(vpRC));
-    }
+		ScopedPtr<RenderCommand> vpRC;
+		UniformViewProjectionRC* matRCitself = vpRC.AllocT<UniformViewProjectionRC>();
+		matRCitself->SetViewProjection(vm_, pm_, "u_light_v_matrix", "u_light_p_matrix");
+		drawObjDisplayList->Add(std::move(vpRC));
+	}
 
 ```
   
