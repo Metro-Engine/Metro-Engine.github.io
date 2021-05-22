@@ -54,7 +54,7 @@ extern "C" {
   lua_State *L = luaL_newstate();
 
 ```
-  After creating this variable, we also do not need to forgive that we can open **axuiliary** libraries that come with **Lua** as a support for the scripting experience such as the **math library** and the **string library**.
+  After creating this variable, we also do not need to forget that we can open **axuiliary** libraries that come with **Lua** as a support for the scripting experience such as the **math library** and the **string library**.
   
 ```cpp
 
@@ -67,7 +67,7 @@ extern "C" {
 
 ```
 
-  At the end of the execution of the engine we do not need to forgive to close the **Lua Virtual Machine**(_Lua VM_) and it is done with the following function:
+  At the end of the execution of the engine we do not need to forget to close the **Lua Virtual Machine**(_Lua VM_) and it is done with the following function:
   
   ```cpp
     lua_close(L);
