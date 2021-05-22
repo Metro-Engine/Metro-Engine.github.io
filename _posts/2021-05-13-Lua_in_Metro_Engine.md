@@ -117,7 +117,7 @@ int multiplication(lua_State *L) {
   
   ![Resultant Stack for Multiplication Operation](https://i.imgur.com/FTG41ao.png)
   
-  So this way we have essentially got an efficient communication from Lua to C and back to Lua, the number `25` in this case would be available in the lua script to be utilized for whatever operation it is needed for.
+  So this way we have essentially got an efficient communication from C to Lua and back to C, the number `25` in this case would be available in the lua script to be utilized for whatever operation it is needed for.
   
   Now you might be wondering, how do we utilize this function in lua, as far as we know there is no custom `multiplication` function... We need to **register** it to the given lua context so it is available for use in the lua script. This means that we will be utilizing the function `lua_register(luaL_state*, const char*, lua_CFunction f)` function, from the signature we can figure out that it is pretty easy to utilize, in the case of the multiplication we can do the following registration:
   
