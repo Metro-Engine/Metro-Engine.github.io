@@ -194,7 +194,6 @@ void main()
 
 ## Parallax Mapping
 
-(Simulating the geometry based on the height map)
 As previously mentioned, normal mapping was a technique that added extra realism to a flat surface, using the **lighting** system we gave the illusion that there is depth. This does not only stop there, we have another technique called "**Parallax Mapping**" and it is the next step after doing normal mapping, it is specifically related to the **displacement mapping** family and it is also used to give an illusion or effect that there is a given displacement in a flat surface through **height maps**.
  
  Usually you would utilize a plane with `1000` vertices and use a height map to tesselate and displace each one of the vertex to add that extra depth and make a geometry even more realistic regardless of the lighting. 
