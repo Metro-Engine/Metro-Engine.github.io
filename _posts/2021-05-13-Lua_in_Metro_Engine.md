@@ -272,33 +272,50 @@ int main(int argc, char ** argv) {
 ```cpp
 // # Metro Engine User API:
 
+// # Geometry Creation Functions:
+
 int CreateCube(lua_State* L);
 int CreateSphere(lua_State* L);
 int CreateMonkey(lua_State* L);
 
+// # Debugging Tool (Utilized for printing in the logger of our engine):
+
 int printStuff(lua_State* L);
+
+// # Entity Modification Functions:
 
 int SetPosition(lua_State* L);
 int SetRotation(lua_State* L);
 int SetScale(lua_State* L);
 int SetTransform(lua_State* L);
 
+
+// # PBR Values Functions:
+
 int SetRoughness(lua_State* L);
 int SetMetallic(lua_State* L);
+
+// # Rotation Component Modification Functions:
 
 int SetRotationSpeed(lua_State* L);
 int SetRotationAxis(lua_State* L);
 
+// # Entity Hierarchical Parenting Function (Change parent of Entity):
+
 int SetParent(lua_State* L);
+
+// # Creation & Setting of Texture to given entity:
 
 int SetTexture(lua_State* L);
 int CreateTexture(lua_State* L);
 
+// # Set Color of given entity:
+
 int SetColor(lua_State* L);
 
+// # Clear of all entities in scene:
+
 int ClearScene(lua_State* L);
-
-
 
 ```
   
