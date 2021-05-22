@@ -35,7 +35,122 @@ tags: [shadow, texture, lighting, engine]
   
 ## Implementation
   
-  With that explained, we will start explaining how is the actual **implementation** of the actual technique in our **engine**.
+  With that explained, we will start explaining how is the actual **implementation** of the actual technique in our **engine**. As previously mentioned, we need to render to a texture from every light's perspective, this implies that we need to create a render to texture for each **light type**, so if we have `50` directional lights, we need to create 50 **render to textures**.
   
+```cpp
+  RenderToTexture shadowMapRender_[kMaxDirectionalLights];
+```
+  In addition to creating the renders to texture, we need to do a depth attachment with empty textures to each one of those render to textures, and the following code needs to be executed in the `Initialize()` function in our engine:
   
+```cpp
+	for (u32 i = 0; i < kMaxDirectionalLights; i++)
+	{
+		char name[20];
+		sprintf(name, "ShadowMapTexture%d", i);
+		u32 shadowMapDepthTex = tb.createEmptyTexture(glm::vec2(kScreenWidth, kScreenHeight), 4, Texture::kInternalType_Float, name);
+		gpum->shadowMapDepthRender_[i].AddDepthAttachment(shadowMapDepthTex, false);
+	}
+
+```
   
+  Having the textures ready, we now need to do two passes as previously explained, in the first pass we fill the textures with the depth map information (Z buffer) hence in our engine we utilize a specific shader that **fills** the RenderToTexture's depth attachments from the light's perspective, we need to remember that we are utilizing the structure of our engine with DisplayLists, I recommend reading [this post](https://metro-engine.github.io/2021-05-13-Metro_Engine_Structure/) in case you have still not learnt about the structure of the engine.
+  
+```cpp
+
+RenderSystem* rs = coordinator_.GetSystem<RenderSystem>();
+  std::vector<LightHandler> shadowGeneratingLights = sceneDirectionalLights_;
+  std::vector<glm::mat4> lightViewMatrices;
+  std::vector<glm::mat4> lightProjectionMatrices;
+
+  //-------------------------------------------------Shadow mapping pass
+  ScopedPtr<DisplayList> shadowPassDL;
+  shadowPassDL.Alloc();
+  //Use shadow pass material
+  ScopedPtr<RenderCommand> useMatRC;
+  UseMaterialRC* matRCitself = useMatRC.AllocT<UseMaterialRC>();
+  matRCitself->SetMaterialID(GetMaterial(ResourceManager::kMaterialType_OnlyDepth)->getMaterialID());
+  shadowPassDL->Add(std::move(useMatRC));
+
+  SubmitList(std::move(shadowPassDL));
+
+  rs->shadowMapPass_ = true;
+  ```
+  
+  We first use our render system to define when we are doing a **shadow map pass** and we define it with the `shadowMapPass_` bool. For instance we are utilizing `DisplayLists` with a specific material type which in this case is `OnlyDepth` which inherently passes the `Z buffer` information to the texture we have attached to the depth attachment in our render to texture, afterwards we submit the display list to the **main deque** and we activate the shadow map pass, this was the pre-emptive preparation for shadow mapping alongside the creation of the vectors for the directional lights and their respective **view and projection matrixes**.
+  
+  The `Fragment Shader` of the `OnlyDepth` material is the following:
+  
+```glsl
+  
+  #version 330
+
+  layout (location = 0) out float gDepth;
+
+  in vec4 position;
+
+  void main()
+  {
+    gDepth = position.z;
+  }
+
+```
+  
+  In fact we are completely ready to jump straight to the for loop that will be utilizing the `RenderToTextureRC` to fill the textures and for us to setup the matrixes and store them in the previously seen vectors so we can later send them to the shader.
+  
+```cpp
+rs->shadowMapPass_ = true;
+  if (shadowGeneratingLights.size() > 0)
+  {
+    for (u32 i = 0; i < shadowGeneratingLights.size(); i++)
+    {
+      ScopedPtr<DisplayList> innerShadowPassDL;
+      innerShadowPassDL.Alloc();
+
+      ScopedPtr<RenderCommand> renderToTextureRC;
+      RenderToTargetRC* rendToTextureRCItself = renderToTextureRC.AllocT<RenderToTargetRC>();
+      
+      // # We set the target to the specific RenderToTexture.
+      rendToTextureRCItself->SetTarget(&shadowMapDepthRender_[i]);
+      innerShadowPassDL->Add(std::move(renderToTextureRC));
+
+      ScopedPtr<RenderCommand> clearScreenRC;
+      
+      // # We clean the screen so whenever the next RenderToTexture is being filled it works in a clean canvas for Z Buffering:
+      clearScreenRC.AllocT<ClearScreenRC>()->SetDepthClearing(true);
+      innerShadowPassDL->Add(std::move(clearScreenRC));
+
+      SubmitList(std::move(innerShadowPassDL));
+
+      // # We construct the matrixes utilizing the `look at` matrix and the `orthographic` matrix and we execute
+      glm::vec3 fwd = glm::vec3(shadowGeneratingLights[i].forward_.x,
+        shadowGeneratingLights[i].forward_.y,
+        shadowGeneratingLights[i].forward_.z);
+      glm::vec3 up = glm::vec3(shadowGeneratingLights[i].up_.x,
+        shadowGeneratingLights[i].up_.y,
+        shadowGeneratingLights[i].up_.z);
+      glm::vec3 pos = -fwd * 200.0f;
+      rs->vm_ = glm::lookAt(pos, pos + fwd, up);
+      rs->pm_ = glm::ortho<float>(-20, 20, -20, 20, 0.01f, 300);
+      lightViewMatrices.push_back(rs->vm_);
+      lightProjectionMatrices.push_back(rs->pm_);
+      
+      // # We execute the rendering system (we set the light matrixes inside in uniform blocks):
+      rs->Execute();
+    } 
+  }
+
+```
+
+  A more in depth detail on what is interesting about our execution of our rendering system is that we bind the shader in which we will be utilizing the shadow map textures and light matrixes (_view and projection_) and we bind them to uniform blocks so it is easier to organize whenever in the shader, here is the example code:
+  
+```cpp
+	if (shadowMapPass_) {
+        ScopedPtr<RenderCommand> vpRC;
+        UniformViewProjectionRC* matRCitself = vpRC.AllocT<UniformViewProjectionRC>();
+        matRCitself->SetViewProjection(vm_, pm_, "u_light_v_matrix", "u_light_p_matrix");
+        drawObjDisplayList->Add(std::move(vpRC));
+    }
+
+```
+  
+  This would be the internal work that we would be basically doing in our **engine** as far as **CPU** goes, now the shader 
