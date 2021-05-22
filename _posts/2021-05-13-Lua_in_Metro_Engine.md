@@ -319,4 +319,13 @@ int ClearScene(lua_State* L);
 
 ```
   
+### End Words
+  
+  So far this has been the journey for **LUA** and how **Scripting** really works in our engine, as you can see we did not go very far with the functionalities, we learnt how the basic communication was done and we provided a bridge between those two languages and our engine to make it work perfectly, using this same methods we created an `Init()` function and `Update()` function that you can declare in any of the entities to be able to initialize or have a loop inside the script to fully expand on your posibilities as far as scripting goes.
+  
+  We extracted all the resources from the following pages:
+  
+  - [Embedding Lua in C++ by Dave Poo](https://www.youtube.com/watch?v=xrLQ0OXfjaI&list=PLLwK93hM93Z3nhfJyRRWGRXHaXgNX0Itk)
+  - [Main Lua Reference Manual](https://pgl.yoyo.org/luai/i/about)
+  - [Lua Pil](https://www.lua.org/pil/24.html)
   
