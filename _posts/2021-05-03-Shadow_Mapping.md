@@ -153,4 +153,149 @@ rs->shadowMapPass_ = true;
 
 ```
   
-  This would be the internal work that we would be basically doing in our **engine** as far as **CPU** goes, now the shader 
+  This would be the internal work that we would be basically doing in our **engine** as far as **CPU** goes, now the shader specifically speaking ,the `light_pass` shader you utilize depending on your render, ** Blinn Phong** or **PBR** (_Physical Based Rendering_) for example. The shader for shadow mapping would look as the following:
+  
+```glsl
+
+#version 330
+
+const int kMaxDirectionalLights = 4; 
+const int kMaxSpotLights = 4; 
+const int kMaxPointLights = 30; 
+
+layout (location = 0) out vec4 gColorResult;
+
+uniform sampler2D u_shadow_map[kMaxDirectionalLights];
+uniform mat4 u_light_v_matrix[kMaxDirectionalLights];
+uniform mat4 u_light_p_matrix[kMaxDirectionalLights];
+
+struct DirectionalLight {
+	vec4 position;
+	vec4 direction;
+	vec4 color;
+
+};
+
+struct SpotLight {
+	vec4 position;
+	vec4 direction;
+	vec4 color;
+
+    vec4 radius_;
+
+};
+
+struct PointLight {
+	vec4 position;
+	vec4 direction;
+	vec4 color;
+
+    float radius_;
+    float constant_;
+    float linear_;
+    float quadratic_;
+
+};
+
+
+layout (std140) uniform Matrices {
+    mat4 u_v_matrix;
+    mat4 u_p_matrix;
+};
+
+uniform sampler2D u_color_texture;
+uniform sampler2D u_position_texture;
+uniform sampler2D u_normal_texture;
+
+layout (std140) uniform LightsBlock {
+	vec4 numOfLights; // x = directionalLights, y = spotLights, z = pointLights
+    DirectionalLight directionalLights[kMaxDirectionalLights];
+    SpotLight spotLights[kMaxSpotLights];
+    PointLight pointLights[kMaxPointLights];
+};
+
+in vec2 uvs;
+
+
+float CalculateShadowFactor(vec4 lightSpacePos, vec4 lightDirection, int index){
+
+	vec4 lightDir = lightDirection;
+	// perform perspective divide
+    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(u_shadow_map[index], projCoords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+  
+		float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+		
+		return shadow;
+	
+}
+
+vec4 CalculateDirectionalLights() {
+	// [...]
+}
+
+vec4 CalculatePointLights() {
+	// [...]
+}
+
+
+vec4 CalculateSpotLights() {
+	// [...]
+}
+
+void main() {
+
+ // [...]
+ 
+ 
+	vec4 albedo = texture(u_color_texture, uvs);
+	vec4 worldPosition = texture(u_position_texture, uvs);
+	vec4 worldNormal = texture(u_normal_texture, uvs);
+	
+	// [...]
+ 
+vec3 outputLuminance = vec3(0.0);
+ for (int i = 0; i < numOfLightsDirectional; ++i)
+    {
+        lightSpacePositions[i] = u_light_p_matrix[i] * u_light_v_matrix[i] * worldPosition;
+     
+		 		// [...]
+
+				// PBR Calculations are done, for now the function that is important is CalculateShadowFactor();
+        outputLuminance += (kD * albedo.xyz / PI + specular) * radiance * NdotL * (1 - CalculateShadowFactor(lightSpacePositions[i], vec4(-L,0.0), i));
+
+    }
+
+}
+
+```
+
+We can see that the important calculus here is done in the function `CalculateShadowFactor(vec4 lightPos, vec4 lightDir, int index)` , we can see that we clamp the depth range values that we can capture to `[0, 1]` and we sample the **closest** and **current depth** captured and compare them to see which one is the projected shadow and which not.
+
+In addition to that we can see that the actual shadow is being returned and accumulated to the output luminance value to compute the final fragment value that is going to be shown to the screen, notice how we project the coordinates with the light's transform matrix so we can do the proper calculations as explained in the drawings at the beginning of the post.
+
+With the current approach to shadows we might suffer what is called "**shadow acne**", this effect happens in like a [Moiré-like pattern](https://en.wikipedia.org/wiki/Moir%C3%A9_pattern) , this means that we can see large part of the projected shadows rendering with very obvious pattern black lines in an alternation, this happens because the shadow map is limited by resolution, multi-sampling the same depth values on different fragments.
+
+The issue comes whenever the light source looks at an angle towards the surface of the object, the shadow map is also rendered from an angle, kind of like distoring itself, this means that several fragments access the same distorted texel and some of them are captured above the object and some below. This means that the depth values captured can be falsely measured and some of them might be captured as projected shadows when in reality they are not meant to be shadows.
+
+A simple **hack** can be done to fix this issue, using what we call the **shadow** bias, we simply offset the depth values of the shadow map by a small amount so that the fragments are not incorrectly measured.
+
+![Shadow Bias Hack](https://user-images.githubusercontent.com/48097484/119239050-9feac480-bb46-11eb-8a7e-582f61e951d0.png)
+
+With the bias applied, all the sampled depth values are smaller than the surface's depth and the entire surface of the object is lit correctly, this is how you would implement it:
+
+```glsl
+	float bias = 0.005;
+	float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+```
+
+## Conclusion
+
+In general this is how we implement shadow mapping in our current engine, the **cpu** part is all about getting ready the **RenderToTextures** and the **empty textures** to be able to efficiently pass them to the given shader and then use that **depth information** (_ZBuffer_) to be able to do comparisons with the **light's perspective** to see what is being lit and what is not being lit.
+
+All the information was extracted from [here](https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping) on how to create this wonderful technique, in the future we can expand with **shadow smoothing** (PCF),  variance maps, summed variance maps, etc.
