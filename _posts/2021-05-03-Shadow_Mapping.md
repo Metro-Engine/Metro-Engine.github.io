@@ -74,7 +74,7 @@ RenderSystem* rs = coordinator_.GetSystem<RenderSystem>();
   SubmitList(std::move(shadowPassDL));
 
   rs->shadowMapPass_ = true;
-  ```
+```
   
   We first use our render system to define when we are doing a **shadow map pass** and we define it with the `shadowMapPass_` bool. For instance we are utilizing `DisplayLists` with a specific material type which in this case is `OnlyDepth` which inherently passes the `Z buffer` information to the texture we have attached to the depth attachment in our render to texture, afterwards we submit the display list to the **main deque** and we activate the shadow map pass, this was the pre-emptive preparation for shadow mapping alongside the creation of the vectors for the directional lights and their respective **view and projection matrixes**.
   
