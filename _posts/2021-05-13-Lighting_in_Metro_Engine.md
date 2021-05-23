@@ -80,7 +80,7 @@ struct DirectionalLight {
 
 - The `Kc` constant variable is there to usually keep in check that the denominator of the formula never gets smaller than `1` since this would modify the intensity of the light source over certain distances which could cause erratic behavior.
 - The `Kl` linear value is multiplied with the distance value to reduce the intensity in a linear fashion from `1` to approximately `0` the more the distance grows.
-- The `Kq` quadratic variable is used to determine a quadratic decrease of the intensity for the light source. An example of how quadratic equations work [here](https://www.mathsisfun.com/algebra/quadratic-equation.html)
+- The `Kq` quadratic variable is used to determine a quadratic decrease of the intensity for the light source. An example of how quadratic equations work [here](https://www.mathsisfun.com/algebra/quadratic-equation.html).
 
   Due to the quadratic variable the light will start losing intensity in a linear fashion until a certain threshold of distance is passed, then it will start decreasing a lot faster until it almost reaches `0`, implying that thanks to the quadratic constant we will have a more progressive loss of light intensity towards the distance.
   
@@ -127,6 +127,56 @@ vec4 CalculatePointLights(PointLight light, vec4 worldSpacePos, vec4 colorTexVal
   
   
 ## Spotlight
+
+And the last type of light that was added to the engine was the **spotlight**, we know that a spotlight in its essence is a light that shoots its rays in a specific direction, it is the limited version of what a point light is, the direction of the rays is not **omnidirectional** anymore but are constrained in a **circular** limit.
+
+As it is a **circular** shape, we of course can define an angle with which the aperture(_radius_) of the spotlight better known as the `cut-off angle` which defines which objects are going to be lit, the lighting direction of the spotlight and then we also have another internal angle called `theta` that defines the angle between the light direction and the spot direction which is the _perpendicular_ vector of the spotlight.
+
+![SpotLight Calculation Example](https://user-images.githubusercontent.com/48097484/119273690-519ff900-bc0c-11eb-9e3d-1ae3821ec8d8.png)
+
+
+In essence the spotlight calculations are simple enough, we need to calculate the dot product (_which in essence returns the cosine of the angle between two vectors_) in this case the `LightDir` and the `SpotDir` so we can get the angle `Theta` so we can compare it with the given `cut-off` angle to see which fragments are going to be calculated and which not, this implies that we will have to do some kind of if statement in the **Fragment Shader** as following:
+
+
+```glsl
+struct SpotLight {
+	vec4 position;
+	vec4 direction;
+	vec4 color;
+
+    vec4 radius_;
+};
+
+vec4 CalculateSpotLights(SpotLight light, vec4 worldPosition, vec4 colorTexValue) {
+
+    float theta     = dot(light.position.xyz - worldPosition.xyz, normalize(-light.direction.xyz));
+    float intensity = 0.0;   
+
+
+    if(theta > light.radius_.x) 
+    {       
+      intensity = 1.0;
+    }
+
+    vec4 ambient = colorTexValue;
+    vec4 diffuseColor = light.color;
+    return ambient + diffuseColor * intensity;
+    
+}
+
+
+```
+
+As we can see, we do not do any kind of _smoothing_ and we just set the intensity to 1.0 if theta is greater than the given radius(_angle cut-off_), other than that the calculus for a spotlight is pretty straightforward.
+	
+	
+
+## Conclusion
+
+All the references to the different types of lights and mathematics were extracted from [here](https://learnopengl.com/Lighting/Light-casters) in case you want to see a more in depth explanation on it.
+
+
+
 
 
 
