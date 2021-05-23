@@ -360,10 +360,297 @@ Aside from that we have a `std::vector<std::string>` with the UI accessible comp
 
 ### The System (How it Works)
 
+A system in general is a function that iterates upon a list of entities that match with a certain signature of components. This means that every system needs to iterate over a list of entities and some logic will be executed depending on the given system created. To be able to maintain the different type sof systems we will need some sort of manager to maintain the system list. The current system class is just a virtual method `Execute()` and a `std::set` for the entities_ that will be iterated in the system.
+
+```cpp
+
+namespace Metro {
+
+	class System {
+
+	public:
+		virtual void Execute() {}
+		std::set<u32> entities_;
+
+	};
+
+
+};
+```
+A `std::set` uniquely indexes every single entity that is added to it, this means that just straight off the bat we will avoid duplicates and entities being iterated more than the necessary times and along those lines we have utility functions such as `insert()` and `erase()`.
+
+### The System Manager
+
+The system manager is the one in charge of maintaining and taking a record of all the registered systems and their specific signatures. Initially we need to call `RegisterSystem()` with the specific system to be able to register it successfully to the ECS system.
+
+The manager in itself is going to be in charge of capturing the signature changes in the entities to be able to insert it on the specific system whenever a change on the entity happens aside from that it controls all the additions and deletions of entities in the specific systems aside from setting system signatures.
+
+```cpp
+namespace Metro {
+
+	class SystemManager {
+
+	public:
+		template<typename T>
+		inline std::shared_ptr<T> RegisterSystem()
+		{
+			const char* typeName = typeid(T).name();
+
+			assert(systems_.find(typeName) == systems_.end() && "[Metro ECS] System is being registered more than once! ");
+
+			auto system = std::make_shared<T>();
+			systems_.insert({
+				typeName,
+				system
+				});
+
+
+			return system;
+		}
+
+		template<typename T>
+		inline T* GetSystem()
+		{
+			const char* typeName = typeid(T).name();
+			return static_cast<T*>(systems_[typeName].get());
+		}
+
+		template<typename T>
+		void SetSignature(Signature sig)
+		{
+			const char* typeName = typeid(T).name();
+
+			assert(systems_.find(typeName) != systems_.end() && "[Metro ECS] System is being used before registering it.");
+			signatures_.insert({typeName, sig});
+		}
+
+		void EntityDestroyed(u32 entity)
+		{
+			for (auto const& pair : systems_)
+			{
+				auto const& system = pair.second;
+				system->entities_.erase(entity);
+			}
+		}
+
+		void EntitySignatureChanged(u32 entity, Signature entitySignature)
+		{
+
+			for (auto const& pair : systems_)
+			{
+				auto const& type = pair.first;
+				auto const& system = pair.second;
+				auto const& systemSignature = signatures_[type];
+
+				if ((entitySignature & systemSignature) == systemSignature)
+				{
+					system->entities_.insert(entity);
+				}
+				else {
+					system->entities_.erase(entity);
+				}
+
+			}
+		}
+
+
+
+	private:
+		std::unordered_map<const char*, Signature> signatures_;
+		std::unordered_map<const char*, std::shared_ptr<System>> systems_;
+
+
+	};
 
 
 
 
+};
+
+```
+
+### The Coordinator
+
+This is the last component to be able to make everything work in this beautiful system, we know that we have entities that are being managed by an **entity manager**, components that are being managed by a **component manager** and lastly systems that are being managed by a **system manager**, well to no one's susprise, this managers need to communicate between eachother to be able to make everything work as expected, here is where the actual **coordinator** enters. We bundle all the managers in what we call **The Coordinator** and from there we design all the base behaviors  for entity creation, destruction, component registration, adding components, destroying them, system setting, etc.
+
+```cpp
+
+namespace Metro {
+
+	class Coordinator {
+
+	public:
+
+		Coordinator();
+
+		void Init();
+
+		void CreateRootEntity();
+		u32 CreateEntity();
+		void DestroyEntityAndChildren(u32 entity);
+
+		template<typename T>
+		void RegisterComponent(bool isUserAccesibleInUI) {
+			componentManager_->RegisterComponent<T>(isUserAccesibleInUI);
+		}
+		template<typename T>
+		void AddComponent(u32 entity, T component) {
+
+#if 1
+			
+
+			//Local dependences
+			GPUManager* gpum = GPUManager::GetInstance();
+			if (HasComponent<T>(entity))
+			{
+				//RemoveComponent<T>(entity);
+				gpum->logger_.AddMessage(
+					"This entity already has that component!", 
+					Logger::kLoggerMessageWarning);
+				return;
+			}
+			Coordinator& coord = gpum->coordinator_;
+
+			//Allocation
+			ScopedPtr<DisplayList> addCompDL;
+			addCompDL.Alloc();
+			ScopedPtr<RenderCommand> addComponentCommand;
+			AddComponentLC<T>* addComponentCommandItself = addComponentCommand.AllocT<AddComponentLC<T>>();
+
+			//Initializations and assignations
+			addComponentCommandItself->Initialize(entity, component, 
+				coord.componentManager_, coord.entityManager_, coord.systemManager_);
+			addCompDL->Add(std::move(addComponentCommand));
+
+			//Submitting
+			gpum->SubmitList(std::move(addCompDL));
+#else
+			componentManager_->AddComponent<T>(entity, component);
+
+			auto signature = entityManager_->GetSignature(entity);
+			signature.set(componentManager_->GetComponentType<T>(), true);
+			entityManager_->SetSignature(entity, signature);
+			systemManager_->EntitySignatureChanged(entity, signature);
+#endif
+		}
+
+		void AddComponentFromName(u32 entity, std::string compName);
+
+		template<typename T>
+		void RemoveComponent(u32 entity) {
+
+#if 1
+			//Local dependences
+			GPUManager* gpum = GPUManager::GetInstance();
+			Coordinator& coord = gpum->coordinator_;
+
+			//Allocation
+			ScopedPtr<DisplayList> addCompDL;
+			addCompDL.Alloc();
+			ScopedPtr<RenderCommand> removeComponentCommand;
+			RemoveComponentLC<T>* removeComponentCommandItself = removeComponentCommand.AllocT<RemoveComponentLC<T>>();
+
+			//Initializations and assignations
+			removeComponentCommandItself->Initialize(entity,
+				coord.componentManager_, coord.entityManager_, coord.systemManager_);
+			addCompDL->Add(std::move(removeComponentCommand));
+
+			//Submitting
+			gpum->SubmitList(std::move(addCompDL));
+#else
+			componentManager_->RemoveComponent<T>(entity);
+
+			auto signature = entityManager_->GetSignature(entity);
+			signature.set(componentManager_->GetComponentType<T>(), false);
+			entityManager_->SetSignature(entity, signature);
+			systemManager_->EntitySignatureChanged(entity, signature);
+#endif
+			
+		}
+
+
+		template<typename T>
+		T& GetComponent(u32 entity) {
+			return componentManager_->GetComponent<T>(entity);
+		}
+
+		template<typename T>
+		bool HasComponent(u32 entity) {
+			return componentManager_->HasComponent<T>(entity);
+		}
+
+		template<typename T>
+		u8 GetComponentType() {
+			return componentManager_->GetComponentType<T>();
+		}
+
+		template<typename T>
+		std::shared_ptr<T> RegisterSystem(){
+			return systemManager_->RegisterSystem<T>();
+		}
+		template<typename T>
+		T* GetSystem(){
+			T* s = systemManager_->GetSystem<T>();
+			return s;
+		}
+		template<typename T>
+		void SetSystemSignature(Signature signature) {
+			systemManager_->SetSignature<T>(signature);
+		}
+
+		inline u8 NumOfExistingComponents() 
+		{
+			return componentManager_->NumOfExistingComponents();
+		}
+
+		inline u32 GetSceneMaxEntitiesDepthLevel() {
+			return entityManager_->sceneMaxEnityDepthLevel_;
+		}
+
+		inline void SetSceneMaxEntitiesDepthLevel(u32 newDL) {
+			entityManager_->sceneMaxEnityDepthLevel_ = newDL;
+		}
+
+
+		void Entity_ModifyTransform(u32 entity, glm::vec3 position,
+			glm::vec3 rotation = glm::vec3(0.0f),
+			glm::vec3 scale = glm::vec3(1.0f));
+		void Entity_ModifyTransformPosition(u32 entity, glm::vec3 position);
+		void Entity_ModifyTransformRotation(u32 entity, glm::vec3 rotation);
+		void Entity_ModifyTransformScale(u32 entity, glm::vec3 scale);
+
+
+		void Entity_SetParent(u32 childEntity, u32 parentEntity);
+		void Entity_SetGeometry(u32 entity, u32 geometry);
+		void Entity_SetLightProperties(u32 entity, glm::vec4 color, LightComponent::kLightType lightType);
+
+		std::shared_ptr<ComponentManager> GetComponentManager() {
+			return componentManager_;
+		}
+
+	private:
+
+		void DestroyEntity(u32 entity);
+
+		u32 rootEntity_;
+		std::shared_ptr<ComponentManager> componentManager_;
+		std::shared_ptr<EntityManager> entityManager_;
+		std::shared_ptr<SystemManager> systemManager_;
+		
+		void lock();
+		void unlock();
+
+
+	};
+}
+```
+
+
+## Conclusion
+
+As we can see, ECS is a beautiful system that fixes two majors problems that we have nowadays with **OOP** as far as **data management** goes, flexibility and misuse of cache, thanks to ECS and how we organize data, we make everything more **modular** and we utilize **cache** to its fullest to be able to gain performance.
+
+All the information was taken from [here](https://austinmorlan.com/posts/entity_component_system/) , thanks to Austin Morlan for providing such a great website from which we could create an ECS system to integrate in our engine, it was very insightful.
 
 
 
