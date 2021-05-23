@@ -160,3 +160,214 @@ To solve this problem whenever you destroy an entity to **not** leave a hole is 
 
 ![Component Array Example #1](https://user-images.githubusercontent.com/48097484/119245000-17841800-bb76-11eb-8a21-2df407f6ad50.png)
 
+We proceed to add a component with value `A` to Entity with Index `0` in the arrray:
+
+![Component Array Example #2](https://user-images.githubusercontent.com/48097484/119245065-8497ad80-bb76-11eb-90c9-65967bac1596.png)
+
+Now Imagine we have the array almost full with the same, we add components `B`, `C` to their respective entity with indexes `1` and `2`:
+
+![Component Array Example #3](https://user-images.githubusercontent.com/48097484/119245110-df310980-bb76-11eb-8452-edafd8815b81.png)
+
+Now imagine we delete entity with index `1` in this array, this means that the one that should **theoretically** occupy the spot is the last entity in the array which in this case is the one currently with index `2`.  And the resultant table would look as following:
+
+![Component Array Example Destroy](https://user-images.githubusercontent.com/48097484/119245390-5798ca00-bb79-11eb-9847-6f2a927e5a3e.png)
+
+That is how we would keep reference to the specific indexes so we never end up with holes, we interconnect everything and whenever we want to consult components we keep the **entity -> index** and **index -> entity** so we have immediate conversion between each other.
+
+```cpp
+namespace Metro {
+
+	class IComponentArray
+	{
+	public:
+		virtual ~IComponentArray() = default;
+		virtual void EntityDestroyed(u32 entity) = 0;
+	};
+
+	template<typename T>
+	class ComponentArray : public IComponentArray
+	{
+	public:
+
+		ComponentArray() {
+			componentArray_.Alloc(kMaxEntities);
+			size_ = 0;
+		}
+
+		void InsertData(u32 entity, T component)
+		{
+			// Put new entry at end
+			size_t newIndex = size_;
+			entityToIndexMap_[entity] = newIndex;
+			indexToEntityMap_[newIndex] = entity;
+			componentArray_[newIndex] = component;
+			++size_;
+		}
+
+		void RemoveData(u32 entity)
+		{
+			// Copy element at end into deleted element's place to maintain density
+			size_t indexOfRemovedEntity = entityToIndexMap_[entity];
+			size_t indexOfLastElement = size_ - 1;
+			componentArray_[indexOfRemovedEntity] = componentArray_[indexOfLastElement];
+
+			// Quick reorder of the array, changing the element we want to remove with the last one,
+			// and deleting last one.
+			u32 entityOfLastElement = indexToEntityMap_[indexOfLastElement];
+			entityToIndexMap_[entityOfLastElement] = indexOfRemovedEntity;
+			indexToEntityMap_[indexOfRemovedEntity] = entityOfLastElement;
+
+			entityToIndexMap_.erase(entity);
+			indexToEntityMap_.erase(indexOfLastElement);
+
+			--size_;
+		}
+
+		T& GetData(u32 entity)
+		{
+			if (entityToIndexMap_.find(entity) == entityToIndexMap_.end())
+			{
+				printf("[ERROR] : Tried to get an unexisting component from entity %d\n", entity);
+				return T();
+				//assert(entityToIndexMap_.find(entity) != entityToIndexMap_.end());
+			}
+			return componentArray_[entityToIndexMap_[entity]];
+		}
+
+		void EntityDestroyed(u32 entity) override
+		{
+			if (entityToIndexMap_.find(entity) != entityToIndexMap_.end())
+			{
+				RemoveData(entity);
+			}
+		}
+
+		bool Exist(u32 entity) {
+			return entityToIndexMap_.find(entity) != entityToIndexMap_.end();
+		}
+
+	private:
+		ScopedArray<T, u32> componentArray_;
+		std::unordered_map<u32, size_t> entityToIndexMap_;
+		std::unordered_map<size_t, u32> indexToEntityMap_;
+		size_t size_;
+	};
+
+
+}
+
+```
+
+The IComponentArray is a virtual inheritance that is required, it pretty much our bridge of commuincation between all the component arrays (_one per component type_), this will basically serve to update all the other component arrays with the correct information once an entity is deleted.
+
+We need to consider that we use an `std::unordered_map<u32, size_t>` and that has its penalty because as the name implies, it is an unordered data structure that does not have a set **continuity** hence why the better option here would be **arrays** to still keep that continuity but as of now, we tend to be more flexible towards the unordered_map because it has utility functions such as `find()`, `insert()` and `delete()` which allow for a more comfortable and flexible use of the data structure compared to an array.
+
+### The Component Manager
+
+This is going to be the manager that is going to be communicating with all the `ComponentArrays` in the ECS and will be in charge of capturing when a component needs to be added or removed, this means that this manager needs to know the **unique ID** of every type of component so that it can have a bit in a signature.
+
+Similarly to the **entity manager** we will have a component type variable that will increment by one for each component type registered.
+
+```cpp
+namespace Metro {
+	class ComponentManager
+	{
+	public:
+
+		ComponentManager() {
+			nextComponentType_ = 0;
+		}
+
+		template<typename T>
+		void RegisterComponent(bool isUserAccesibleInUI)
+		{
+			const char* typeName = typeid(T).name();
+			if (isUserAccesibleInUI)
+			{
+				std::string thisName = std::string(typeName);
+				thisName.erase(0, 13);
+				uiAccessibleComponentNames_.push_back(thisName);
+			}
+			componentTypes_.insert({ typeName, nextComponentType_ });
+			componentArrays_.insert({ typeName, std::make_shared<ComponentArray<T>>() });
+			++nextComponentType_;
+		}
+
+		template<typename T>
+		u8 GetComponentType()
+		{
+			const char* typeName = typeid(T).name();
+			return componentTypes_[typeName];
+		}
+
+		template<typename T>
+		void AddComponent(u32 entity, T component)
+		{
+			GetComponentArray<T>()->InsertData(entity, component);
+		}
+
+		template<typename T>
+		void RemoveComponent(u32 entity)
+		{
+			GetComponentArray<T>()->RemoveData(entity);
+		}
+
+		template<typename T>
+		T& GetComponent(u32 entity)
+		{
+			return GetComponentArray<T>()->GetData(entity);
+		}
+
+		template<typename T>
+		bool HasComponent(u32 entity)
+		{
+			auto componentArray = GetComponentArray<T>();
+			return componentArray->Exist(entity);
+		}
+
+		void EntityDestroyed(u32 entity)
+		{
+			for (auto const& pair : componentArrays_)
+			{
+				auto const& component = pair.second;
+
+				component->EntityDestroyed(entity);
+			}
+		}
+
+		u8 NumOfExistingComponents() {
+			return nextComponentType_;
+		}
+
+		std::vector<std::string> uiAccessibleComponentNames_;
+
+	private:
+		std::unordered_map<const char*, u8> componentTypes_;
+		std::unordered_map<const char*, std::shared_ptr<IComponentArray>> componentArrays_;
+		u8 nextComponentType_;
+
+		template<typename T>
+		std::shared_ptr<ComponentArray<T>> GetComponentArray()
+		{
+			const char* typeName = typeid(T).name();
+			return std::static_pointer_cast<ComponentArray<T>>(componentArrays_[typeName]);
+		}
+	};
+}
+```
+
+Aside from that we have a `std::vector<std::string>` with the UI accessible components that is of use for us in our engine for the ImGui interface in the engine. Thanks to C++ and templarization we can modularize all the functions for creation and deletion of components so we can use the same code for different types of components altogether.
+
+### The System (How it Works)
+
+
+
+
+
+
+
+
+
+
+
+
