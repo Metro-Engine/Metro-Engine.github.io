@@ -41,4 +41,26 @@ We can see that if we have almost zero roughness the specular is sharper whereas
   
   We can deduct that the **reflected** part is obviously the part that hits the surface and does not get absorbed in it, it just purely bounces off the surface whereas the **refracted** one partially enters the surface and gets absorbed in the object, this is what we know as the **diffuse** component of the light, the one that gets absorbed in the object's surface.
   
+  ![Refracted Vs Reflected](https://user-images.githubusercontent.com/48097484/119422838-30213900-bd02-11eb-927e-605cd3011a18.png)
+
+  We need to consider that for our current implementation of **PBR** both components **Kd** and **Ks** are mutually **exclusive** ths means that light that gets reflected will no longer get absorbed by the object in the shape of **diffuse lighting** and likewise for the refracted one, it will not emerge towards the surface of the object to contribute to reflected light, this is just a simplification so we can have an easier distinction between both components. 
   
+  To be able to **preserve** the energy we first calculate the **specular** fraction percentage of the incoming light and then substract it the leftover to get the diffuse.
+  
+```glsl
+float kS = calculateSpecularComponent();
+float kD = 1.0 - kS;
+```
+
+This way we make sure that **both** components never exceed the value of `1.0`, this allows us to control the energy conservation principle, something that was not taken into account for example in the `Blinn-Phong` rendering technique for lighting.
+
+### The Reflectance Equation
+
+| Symbol | Short Description |
+| :------ |:--- |
+| L | Denoted as the **radiance** in the reflectance equation. | 
+| Φ | Denoted as the radiant flux, it is the transmitted energy of a light source measured in **Watts**. | 
+| ω | Denoted as the **solid angle**, it tells us the area of a shape projected onto a unit sphere. | 
+| I | Denoted as the **radiant intensity**, it is used to measure the amount of **radiant flux** per solid angle. |
+
+
