@@ -33,6 +33,12 @@ To be able to have this distinction between rough and smooth surfaces we need to
   
   ![Roughness 0.1 to 1.0](https://user-images.githubusercontent.com/48097484/119421306-b5a2ea00-bcfe-11eb-95fc-a050b80dd409.png)
 
-We can see that if we have almost zero roughness the specular is sharper whereas if we get it close to `0.8` or `1.0` the specular tends to be more difuminated, implying that the light rays scatter more compared to when they are close to zero where the rays almost do not scatter.
+We can see that if we have almost zero roughness the specular is sharper whereas if we get it close to `0.8` or `1.0` the specular tends to be more difuminated, implying that the light rays scatter more compared to when they are close to zero where the rays almost **do not** scatter.
 
+### Energy Conservation
 
+  Essentially this means that the light leaving a surface can never be brighter than the light that fell upon it. For us to have a clear distinction of this and have a real appreciation if there is really energy conservation we need to separate the light in their diffuse and specular components `Kd` and `Ks`. We need to make obvious that the moment an actual light ray hits a surface it splits in **two** components, the **REFRACTED** part and the **REFLECTED** part.
+  
+  We can deduct that the **reflected** part is obviously the part that hits the surface and does not get absorbed in it, it just purely bounces off the surface whereas the **refracted** one partially enters the surface and gets absorbed in the object, this is what we know as the **diffuse** component of the light, the one that gets absorbed in the object's surface.
+  
+  
