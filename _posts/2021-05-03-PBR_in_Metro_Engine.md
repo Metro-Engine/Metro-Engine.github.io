@@ -64,4 +64,10 @@ This way we make sure that **both** components never exceed the value of `1.0`, 
 | ω | Denoted as the **solid angle**, it tells us the area of a shape projected onto a unit sphere. | 
 | I | Denoted as the **radiant intensity**, it is used to measure the amount of **radiant flux** per solid angle. |
 
+  Now comes one of the **hardest** parts of this post, breaking down the **reflectance equation** to be able to fully understand **PBR** and how does it work internally as far as mathematics goes. Just to get a bit friendly with the equation, here is a first glance at it, it might appear a bit daunting but we will try our best to break it down so you can understand it, and we hopefully can understand it a bit better (_haha..._).
+  
+  ![The Reflectance Equation PBR](https://user-images.githubusercontent.com/48097484/119423829-855e4a00-bd04-11eb-8f03-f892188bf72e.png)
+
+  
+
 
