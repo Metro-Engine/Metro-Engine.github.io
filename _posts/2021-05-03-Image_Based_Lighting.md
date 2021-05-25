@@ -115,7 +115,120 @@ If everything went correctly and as expected, you shall be seeing a unit cube in
 
 ![Equirectangular Map Demonstration](https://user-images.githubusercontent.com/48097484/119528718-bb8ddf00-bd81-11eb-9d79-245633061f8a.png)
 
+  We need to remark that for us to be able to represent a skybox regardless of the context of doing IBL or not, we need to sample each face a projection in itself, a lookAt matrix per face so it is pointing **inwards** towards the scene. Afterwards we will make sure that `glDepthFunc(GL_LEQUAL)` is being done in the depth comparison so the skybox is drawn behind all the other objects in the scene and lastly we will be drawing the projected cube through the shader.
+
+(_This renders a specific cubemap face_)
+```glsl
+#version 330 
+
+layout (location = 0) in vec3 a_position;
+
+out vec3 modelSpacePosition;
+
+uniform mat4 u_p_matrix;
+uniform mat4 u_v_matrix;
+
+void main()
+{
+    modelSpacePosition = a_position;  
+    gl_Position =  u_p_matrix * u_v_matrix * vec4(modelSpacePosition, 1.0);
+}
+```
+And this **Fragment Shader** samples the environment cubemap and outputs the color:
+(_Notice how we are applying gamma correction before outputing the color to the screen_) 
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in vec3 localPos;
   
+uniform samplerCube environmentMap;
+  
+void main()
+{
+    vec3 envColor = texture(environmentMap, localPos).rgb;
+    
+    // [Gamma Correction]
+    envColor = envColor / (envColor + vec3(1.0)); 
+    envColor = pow(envColor, vec3(1.0/2.2)); 
+  
+    FragColor = vec4(envColor, 1.0);
+}
+```
+## Diffuse IBL
+
+After we have the normal environment map calculated and displayed in the screen as a normal skybox we need to proceed as we previously stated, we need to pre-calculate the **irradiance** map and this is done through a **fragment shader** and as mentioned, to be able to calculate the final **irradiance** value we need to take into consideration all the previous **captured information**, so the code looks as following:
+
+```glsl
+#version 330
+
+out vec4 FragColor;
+in vec3 modelSpacePosition;
+uniform samplerCube environmentMap;
+
+const float PI = 3.14159265359;
+
+void main()
+{		
+    vec3 normal = normalize(modelSpacePosition);
+    vec3 irradiance = vec3(0.0);
+    
+    vec3 up = vec3(0.0, 1.0, 0.0);
+    vec3 right = normalize(cross(up, normal));
+    up = normalize(cross(normal, right));
+
+    float sampleDelta = 0.025;
+    float nrSamples = 0.0; 
+    for(float phi = 0.0; phi < 2.0 * PI; phi += sampleDelta)
+    {
+        for(float theta = 0.0; theta < 0.5 * PI; theta += sampleDelta)
+        {
+            // spherical to cartesian (in tangent space)
+            vec3 tangentSample = vec3(sin(theta) * cos(phi),  sin(theta) * sin(phi), cos(theta));
+            // tangent space to world
+            vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * normal; 
+
+            irradiance += texture(environmentMap, sampleVec).rgb * cos(theta) * sin(theta);
+            nrSamples++;
+        }
+    }
+    irradiance = PI * irradiance * (1.0 / float(nrSamples));
+
+    FragColor = vec4(irradiance, 1.0);
+}
+
+```
+
+  Notice how we are utilizing `cos`, `sin` and `pi` to be able to convolute, that is becuase we are going to use a spherical convolution like displayed in the following and we will be extracting an average for each final value while taking into consideration the other sampled values:
+  
+  ![Spherical Convolution Example](https://user-images.githubusercontent.com/48097484/119535350-2b9f6380-bd88-11eb-9841-15cab6d72805.png)
+
+At the end of the day we will end up with an irradiance map that is the **blurred** version of the **environment map** if everything was calculated correctly and we will be able to utilize it in the **shader** to compute the **radiance** and **irradiance** values, which goes tightly hand to hand with the **PBR** rendering technique.
+
+In this case for us to be able to calculate the diffuse part of the reflectance equation we can use the `FresnelSchlick` approximation function, although we will be adding a slight modification to it, adding a roughness value to it so at the end we do not end up with relatively smooth surfaces that reflect very strongly, with this little fix we get a more realistic approach because the fresnel calculations will not work as if the object was completely smooth, it will be determined by the roughness parameters of the microfacets.
+
+```glsl
+vec3 fresnelSchlickRoughness(float HdotV, vec3 baseReflectivity, float roughness)
+{
+    return baseReflectivity + 
+    (max(vec3(1.0 - roughness), baseReflectivity) - baseReflectivity) * 
+    pow(1.0 - HdotV, 5.0);
+}
 
   
+//Ambient
+vec3 F = fresnelSchlickRoughness(NdotV, baseReflectivity, roughness);
+vec3 kD = (1.0 - F) * (1.0 - metallic);
+vec3 irradiance = texture(u_irradiance_map, N).rgb * albedo.xyz * kD;
+
+```
+
+At the end with the **diffuse IBL** we will end up with the following result: 
+
+![Metro Engine Diffuse IBL](https://user-images.githubusercontent.com/48097484/119537675-9356ae00-bd8a-11eb-8503-abac594a1a9c.png)
+
+As we can see we have done a linear scaling of the metallic and roughness values in the grid, that is why there is a clear visual difference between the spheres that are at the top right and the top left. Now to make it more realistic we are still lacking the specular component of the light to be able to see the reflection of the cubemap in our objects, this in other words is called the **Specular IBL**.
+
+## Specular IBL
 
