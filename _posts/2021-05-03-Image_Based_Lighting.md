@@ -232,3 +232,63 @@ As we can see we have done a linear scaling of the metallic and roughness values
 
 ## Specular IBL
 
+In this case we will do a similar process like in **diffuse IBL**, in this case we will be calculating two different textures, one of them being the **pre-filtered environment map** and the other one is called the **BRDF**, as we are calculating the **specular** lighting, the **roughness** is a very important factor for us to be able to determine if a surface is crystal clear  or rough. For us to be able to create a more feasible effect depending on the actual roughness value of the object we create the pre-filtered environment map which essentially means getting the **environment map** and doing **multiple level-of-detail** cubemaps depending on the different levels of roughness. 
+
+![Prefiltered Map](https://user-images.githubusercontent.com/48097484/119541180-99e72480-bd8e-11eb-8f76-54e660d51dda.png)
+
+And then we also have the **BRDF** texture, this essentially is a **look up texture** (_texture in wihch we store useful information of relevance without caring about the visuals_), in this case it looks like the following:
+
+![BRDF Texture](https://user-images.githubusercontent.com/48097484/119541651-f3e7ea00-bd8e-11eb-8706-befafb1bee29.png)
+
+We know that the horizontal and vertical texture coordinates represent the BRDF's input `n * ωi` and the input roughness respectively. We need to consider that Fresnel represents the reflectivity that occurs at the different view angles of the observer towards the object. Viewing a surface of an object at a gazing angle will most likely **reflect** more strongly compared to a surface where we look straight to it.
+
+In our case we calculate 5 different levels of mipmaps, and we utilize the roughness value of the given object to define with which mipmap it is going to represent the specular values, the rougher a surface of an object is, the blurrier the specular, the smaller the lod map will be.
+
+```glsl
+//Specular
+  const float MAX_REFLECTION_LOD = 4.0;
+  vec3 prefilteredColor = textureLod(u_prefiletered_environment_map,
+      reflect(-V,N),
+      roughness*MAX_REFLECTION_LOD).xyz;
+  vec2 brdf = texture(u_brdf_LUT, vec2(NdotV,roughness)).xy;
+  vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+
+```
+
+  After that, the only thing left is the merging of the **ambient** and **specular** components to be able to represent both **diffuse IBL** and **specular IBL** to give it a realistic look.
+  
+  {: .box-note}
+**Note:** The BRDF texture does not depend on the actual scene and the objects / lights it contains, you can calculate the actual texture with the given radiance and irradiance environment maps and from there you will be able to utilize it for multiple scenes in your engine.
+
+The merging is done the following way:
+
+```glsl
+
+    // [Merge of irradiance + specular] Diffuse + Specular;
+    vec3 ambient = (irradiance + specular) * ao;
+
+    vec3 color = ambient + outputLuminance;
+
+    //Tone mapping
+    color = color / (color + vec3(1.0));
+    //Gama correction
+    color = pow(color, vec3(1.0/2.2)); 
+
+   	gColorResult = vec4(color, 1.0);
+
+```
+The final scene with the specular merged to the diffuse with 4 point lights in the scene with each object having a different metallic and roughness value is the next one:
+
+![Final Scene with IBL](https://user-images.githubusercontent.com/48097484/119542573-0151a400-bd90-11eb-8698-62df8ad7ad2e.png)
+
+## Conclusion
+
+  Once again, the mathematics on this topic were a bit complex because they heavily rely on both the `kD` and `kS` components of the reflectance equation, nonetheless the actual computing in code with **CPP** and **GLSL** looks less daunting than looking at the mathematic formulas...
+  
+  All the information was extracted from the following places:
+  
+  - [LearnOpenGL Diffuse IBL](https://learnopengl.com/PBR/IBL/Diffuse-irradiance).
+  - [LearnOpenGL Specular IBL](https://learnopengl.com/PBR/IBL/Specular-IBL).
+  - [Image Based Lighting by Brian Will](https://www.youtube.com/watch?v=N_IofZ6MF8k&).
+  - [NVIDIA IBL Approach](https://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch19.html).
+
