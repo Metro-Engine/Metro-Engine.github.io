@@ -56,6 +56,7 @@ This way we make sure that **both** components never exceed the value of `1.0`, 
 
 ### The Reflectance Equation
 
+(_Reference Table for some mathematic symbols_)
 | Symbol | Short Description |
 | :------ |:--- |
 | L | Denoted as the **radiance** in the reflectance equation. | 
