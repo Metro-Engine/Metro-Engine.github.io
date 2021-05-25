@@ -2,14 +2,25 @@
 layout: post
 title: Image-Based Lighting in Metro Engine
 subtitle: IBL implementation in Metro Engine
-tags: [lighting, technique, brdf, pbr]
+tags: [lighting, technique, brdf, pbr, ibl, cubemaps]
 ---
 
-Under what circumstances should we step off a path? When is it essential that we finish what we start? If I bought a bag of peanuts and had an allergic reaction, no one would fault me if I threw it out. If I ended a relationship with a woman who hit me, no one would say that I had a commitment problem. But if I walk away from a seemingly secure route because my soul has other ideas, I am a flake?
+### Image Based Lighting
 
-The truth is that no one else can definitively know the path we are here to walk. It’s tempting to listen—many of us long for the omnipotent other—but unless they are genuine psychic intuitives, they can’t know. All others can know is their own truth, and if they’ve actually done the work to excavate it, they will have the good sense to know that they cannot genuinely know anyone else’s. Only soul knows the path it is here to walk. Since you are the only one living in your temple, only you can know its scriptures and interpretive structure.
+This is yet another advanced technique to improve the lighting on the objects in the scene, it is most commonly known as **Image Based Lighting**, implied that we would sample the lighting from an image and then reflect it on the surface of an object in some kind of way...
 
-At the heart of the struggle are two very different ideas of success—survival-driven and soul-driven. For survivalists, success is security, pragmatism, power over others. Success is the absence of material suffering, the nourishing of the soul be damned. It is an odd and ironic thing that most of the material power in our world often resides in the hands of younger souls. Still working in the egoic and material realms, they love the sensations of power and focus most of their energy on accumulation. Older souls tend not to be as materially driven. They have already played the worldly game in previous lives and they search for more subtle shades of meaning in this one—authentication rather than accumulation. They are often ignored by the culture at large, although they really are the truest warriors.
+  This means that we need to gather the lighting from the surrounding environment as one big light source, this means that we need to utilize something that is pretty common in graphics programming and it is a **cubemap**, it is essentially a texture that contains 6 individual 2d textures that each one of them form a side of a cube, they are pretty useful because they allow us to **sample** using a direction vector and this is going to be heavily used in the IBL technique, in case you want to read more about cubemaps you can go [here](https://learnopengl.com/Advanced-OpenGL/Cubemaps).
+  
+  Now that we know that we can sample from the cubemap having a specific direction and that we need to treat the cubemap itself as a big light source, we can sort individual **texels** of the cubemap as light emitters, this way we can capture the "environment" global lighting and feed it into the objects to make them feel like they pertain to the environment in which they are created in, if we had a cubemap of a blue sky, we would like the actual objects to be lit by the sky to have a blue-ish color, it would feel out of place to have the objects not being affected by the blue sky the slightest, it makes them feel out of place.
+  
+  So to remember a bit and in case you have not read about it, we recommend reading the [PBR post](https://metro-engine.github.io/2021-05-03-PBR_in_Metro_Engine/)  on our blog to be able to understand this technique better because they go hand in hand.
+  
+  ![Cook-Torrance BRDF Reflectance Equation](https://user-images.githubusercontent.com/48097484/119504743-8dea6b00-bd6c-11eb-82c8-040ebb01d4ac.png)
 
-A soulful notion of success rests on the actualization of our innate image. Success is simply the completion of a soul step, however unsightly it may be. We have finished what we started when the lesson is learned. What a fear-based culture calls a wonderful opportunity may be fruitless and misguided for the soul. Staying in a passionless relationship may satisfy our need for comfort, but it may stifle the soul. Becoming a famous lawyer is only worthwhile if the soul demands it. It is an essential failure if you are called to be a monastic this time around. If you need to explore and abandon ten careers in order to stretch your soul toward its innate image, then so be it. Flake it till you make it.
-
+ As mentioned in the **PBR** post, this equation effectively solves the integral of all incoming light directions `ωi` over the hemisphere `Ω`, this was pretty easy to calculate considering that with the PBR rendering pipeline we knew that we had for example 5 lights and 5 directions from wihch we could sample the sum of the radiance in the hemisphere, this is not the case for IBL.
+ 
+ Every single **texel** of the cubemap is going to act as a light emitter, this means that the amount of lights in the scene this time is going to be humongous, this quickly becomes unfeasible to take **every single individual** direction, this means that we need to find ways to approach this in a more feasible way such as finding a way to retrieve the radiance given any direction `ωi` and we need to agilize the calculation of the integral because this needs to be **fast** and in **real-time** because it is integrated in a graphic engine.
+ 
+ 
+ 
+ 
