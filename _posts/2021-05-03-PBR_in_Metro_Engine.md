@@ -248,7 +248,7 @@ vec3 fresnelSchlickRoughness(float HdotV, vec3 baseReflectivity, float roughness
  ```
   We need to remark that this equation will only work for **Dielectric** (_non-metallic_) surfaces, for metallic surfaces the calculations are completely different.
   
- ## Full Cook-Torrance Reflectance Equation
+## Full Cook-Torrance Reflectance Equation
  
  ![Full Cook-Torrance Reflectance Equation Example](https://user-images.githubusercontent.com/48097484/119433299-43d69a80-bd16-11eb-9003-2a3dfda25be2.png)
 
