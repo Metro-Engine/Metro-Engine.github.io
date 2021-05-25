@@ -111,6 +111,11 @@ void main()
     FragColor = vec4(color, 1.0);
 }
 ```
+If everything went correctly and as expected, you shall be seeing a unit cube in the center of the scene with all the 6 faces displayed correctly:
+
+![Equirectangular Map Demonstration](https://user-images.githubusercontent.com/48097484/119528718-bb8ddf00-bd81-11eb-9d79-245633061f8a.png)
+
+  
 
   
 
