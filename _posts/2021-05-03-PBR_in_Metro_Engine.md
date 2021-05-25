@@ -112,5 +112,236 @@ As we previously mentioned, our main goal here is to calculate something that we
 
 Okay, hold up, this is starting to sound complicated, at this point we might have lost you for sure, a quick resume on what all this paragraph above means is that `Lo` pretty much measures the summatory of the light's irradiance onto a point `p` viewed from `ωo`, so think of it that you are the camera and you are casting a infinitely small light of ray to a specific fragment at position `p`, you are essentially calculating the **sum of the irradiance** at that specific point.
 
+  To be able to do a more precise calculation on the physics side of things, we are going to expand on the concept of capturing all incoming **irradiance** from all possible directions onto a specific point `p`. This will be known as the `hemisphere`, it is going to be centered around point `p` and it will capture and sum up all the radiance of the light that comes from all those directions, 360 degrees. It is important to remark that it is aligned with the surface's normal `n`.
+  
+  ![Hemisphere Exemplification](https://user-images.githubusercontent.com/48097484/119427689-bd1cc000-bd0b-11eb-9f32-dd6145ce5045.png)
+
+  To be able to calculate all the values inside this hemispherical area, we utilize something that we might or might not know called an `integral`, it is shown in the reflectance equation with the `∫` shapeand it indicates the sum of all radiance in all the incoming directions ` dωi` withing the hemisphere `Ω`.
+  
+  All the calculations done for the sum of radiance onto point  `p` from direction `ωi` are also scaled by a factor `fr` that is mostly known as the **BRDF** or **bidirectional reflective distribution function** that essentially scaled the incoming radiance based on the surface's properties.
+  
+## BRDF (Bidirectional Reflective Distribution Funcion)
+
+This function takes as input the following information:
+
+- n (surface normal)
+- ωo (outgoing view direction)
+- ωi (incoming light direction)
+- a (represents the roughness of the microsurface)
+
+In essence this function will define how much each individual light ray with direction `ωi` has contributed to the final reflected light of an opaque surface given the properties of the object. If we have a mirror that fully reflects, the BRDF part of the reflectance function would return `0.0` for all incoming rays with direction `ωi`.
+
+{: .box-warning}
+**Warning:** If the incoming ray direction `ωi` is the same as the outgoing ray `ωo`, the BRDF function will return `1.0`, it only happens on that specific case.
+
+Almost everyone nowadays utilizes a very famous BRDF called `Cook-Torrance BRDF` because it contains both the diffuse and specular parts and the formula is the following:
+
+![BRDF Formula](https://user-images.githubusercontent.com/48097484/119431020-1851b100-bd12-11eb-8958-da0228dd5f67.png)
+
+As previously mentioned at the beginning of the post, we know that we have a **refracted** and a **reflected** component for lighting, they both correspond to the `Kd` and `Ks` variables respectively, we notice that both of those variables in the formula are known to us, so no problem there, but we encounter a new one, the **lambertian diffuse** which is represented like this `flambert`, we need to remark that it is a constant factor that denotes the diffuse component and the formula is: 
+
+![Lambertian Diffuse](https://user-images.githubusercontent.com/48097484/119431560-176d4f00-bd13-11eb-9cb7-58bed98cd685.png)
+
+  In this case `c` is the albedo or surface color, in this case we divide by pi to be able to normalize the diffuse light as the reflectance equation is scaled by pi, so to normalize it back we divide it by the same quantity.
+  
+  In general, the previously mentioned `Cook-Torrance BRDF` is separated in various functions that each one of them do a specific thing to contribute to realistic lighting, `D`, `F` and `G` represent a function that is specialized in something very specific, and those are the following:
+  
+  - Normal distribution function.
+  - Geometry function.
+  - Fresnel equation.
+
+  This equations and functions have their real life equivalent in physics, we can pick whatever approximated version we want such as [Trowbridge-Reiz GGX for `D` or the V_Smith GGX Fuction](https://google.github.io/filament/Filament.md.html). 
+  
+  So it is up to the developer to choose whichever function to utilize to represent the physical rendered lighting in the scene of the engine, in our case we went pretty default and utilized `Trowbridge-Reitz GGX`, `Fresnel-Schlick` for `F` and `Smith Schlick-GGX` for `G`.
+  
+  ![Cook Torrance Formula](https://user-images.githubusercontent.com/48097484/119432071-fa854b80-bd13-11eb-959c-5f3b903a40c6.png)
+
+## Normal Distribution Function
+
+  This function specifically approximates the surface area of a microfacets exactly aligned to the halfway vector `h`, it is an alignment corrector towards the normals given a specific roughness parameter. 
+  
+  ![Trowbridge-Reitz GGX Formula](https://user-images.githubusercontent.com/48097484/119432181-2dc7da80-bd14-11eb-8d11-f66d2325c77a.png)
+
+The formula in its own seems complicated to understand but whenever we translate it to code it seems simpler:
+
+```glsl
+
+float DistributionGGX(float NdotH, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a*a;
+    float NdotH2 = NdotH*NdotH;
+
+    float num = a2;
+    float denom = NdotH2 * (a2 - 1.0) + 1.0;
+    denom = PI * denom * denom;
+
+    return num / max(denom, 0.0000001);
+}
+
+```
+
+## Geometry Function
+
+![Geometry Function Example](https://user-images.githubusercontent.com/48097484/119432596-e4c45600-bd14-11eb-9fd6-8017873db660.png)
+
+This function causes microsurfaces to overshadow each other, causing light rays to be occluded, giving a less uniform lighting look given a roughness parameter. The higher the actual roughness parameter is, the more chances your microsurface shave to overshadow other microsurfaces and the more shadowed the object is going to look like.
+
+![Smith Schlick-GGX](https://user-images.githubusercontent.com/48097484/119432719-1c330280-bd15-11eb-9053-b52d5372aced.png)
+
+Once again the formula might be daunting but it is not that difficult whenever represented in code, we need to consider that this is going to be a combination of two formulas Beckmann's approximation and GGX:
+
+```glsl
+
+// Schlick-Beckmann
+float GeometrySchlickGGX(float valDot, float roughness)
+{
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0;
+
+    float num = valDot;
+    float denom = valDot * (1.0 - k) + k;
+
+    return num/denom;
+}
+
+// Smith GGX
+float GeometrySmith(float NdotV, float NdotL, float roughness)
+{
+    
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+
+    return ggx1 * ggx2;
+}
 
 
+```
+
+  The results will be clamped in a value between `[0.0, 1.0]` and the following changes can be appreciated:
+  
+  ![Geometry Function from 0.0 to 1.0](https://user-images.githubusercontent.com/48097484/119432905-73d16e00-bd15-11eb-8120-eb0fa23fdcec.png)
+
+## Fresnel Equation
+
+  ![Fresnel Example](https://user-images.githubusercontent.com/48097484/119433015-a713fd00-bd15-11eb-9170-46e62c3c39fa.png)
+
+  The Fresnel equation is the ratio of ligth that gets reflected over the light that gets refracted and it varies depending on the `viewDir`, whenever we look at a surface from a specific perspective, straight in this case, we have a **base reflectivity**, whenever we start looking it from an angle, all the reflections start being more apparent compared to the base reflectivity when we looked straight, this effect can be approximated computationally wise with the `Fresnel-Schlick` approximation and it is the following one:
+  
+  ![Fresnel-Schlick](https://user-images.githubusercontent.com/48097484/119433154-f823f100-bd15-11eb-85e4-894a03a9973c.png)
+
+  Obviously it looks daunting at first but whenever we represent this in code it simplifies a lot:
+  
+ ```glsl
+ vec3 fresnelSchlick(float HdotV, vec3 baseReflectivity)
+{
+    return baseReflectivity + (1.0 - baseReflectivity) * pow(1.0 - HdotV, 5.0);
+}
+
+vec3 fresnelSchlickRoughness(float HdotV, vec3 baseReflectivity, float roughness)
+{
+    return baseReflectivity + 
+    (max(vec3(1.0 - roughness), baseReflectivity) - baseReflectivity) * 
+    pow(1.0 - HdotV, 5.0);
+}
+
+ ```
+  We need to remark that this equation will only work for **Dielectric** (_non-metallic_) surfaces, for metallic surfaces the calculations are completely different.
+  
+ ## Full Cook-Torrance Reflectance Equation
+ 
+ ![Full Cook-Torrance Reflectance Equation Example](https://user-images.githubusercontent.com/48097484/119433299-43d69a80-bd16-11eb-9003-2a3dfda25be2.png)
+
+  As we can see, from the very simplistic form of calculating single rays towards point `p` with starting direction `ωo` towards light direction `ωi` we substituted it mostly with real life physical equation approximations that transform light in such a way to make it realistic. To be able to utilize this equation we need to have the output of our lights in our scene as previously explained in this post in case you have not read it, you can check it out [here](https://metro-engine.github.io/2021-05-13-Lighting_in_Metro_Engine/).
+  
+  For example to calculate the PBR lighting for the directional lights in our scene we have the following GLSL code:
+  
+```glsl
+
+void main()
+{
+
+  vec3 camPos = u_camerapos.xyz;
+
+	vec4 albedo = texture(u_color_texture, uvs);
+	vec4 worldPosition = texture(u_position_texture, uvs);
+	vec4 worldNormal = texture(u_normal_texture, uvs);
+    
+    float metallic = albedo.w;
+    albedo.w = 1.0;
+
+    float roughness = worldPosition.w;
+    worldPosition.w = 1.0;
+
+    float ao = worldNormal.w;
+    worldNormal.w = 0.0;
+
+    normalize(worldNormal);
+
+    //Camera- fragment vector
+    vec3 V = normalize(camPos - worldPosition.xyz);
+
+    //0.04 is plastic metallic value (almost none) and albedo is the most metallic value. Depending on metallic would interpolate to one or another
+    vec3 baseReflectivity = vec3(0.04);
+    baseReflectivity = mix(baseReflectivity, vec3(albedo.xyz), metallic);
+    vec3 radiance = vec3(0.0);
+
+    vec4 lightSpacePositions[kMaxDirectionalLights];
+
+
+    vec3 outputLuminance = vec3(0.0);
+    int numOfLightsDirectional = int(numOfLights.x);
+    int numOfLightsSpot = int(numOfLights.y);
+    int numOfLightsPoint = int(numOfLights.z);
+
+    vec3 N = worldNormal.xyz;
+    float NdotV = max(dot(N, V), 0.0000001);
+
+    for (int i = 0; i < numOfLightsDirectional; ++i)
+    {
+        lightSpacePositions[i] = u_light_p_matrix[i] * u_light_v_matrix[i] * worldPosition;
+        radiance = CalculateDirectionalLights(directionalLights[i], worldNormal, lightSpacePositions[i], albedo, i).xyz;
+
+        vec3 L = -directionalLights[i].direction.xyz;
+        vec3 H = normalize(V + L);
+
+        float NdotL = max(dot(N, L), 0.0000001);
+        float NdotH = max(dot(N, H), 0.0);
+        float HdotV = max(dot(H, V), 0.0);
+        // Cook Torrance BRDF
+        float NDF = DistributionGGX(NdotH, roughness);
+        float G = GeometrySmith(NdotV, NdotL, roughness);
+        vec3 F = fresnelSchlick(HdotV, baseReflectivity);
+
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metallic;
+
+        vec3 numerator = NDF * G * F;
+        float denominator = 4.0 * NdotV * NdotL;
+        vec3 specular = numerator / max(denominator, 0.0000001);
+
+        outputLuminance += (kD * albedo.xyz / PI + specular) * radiance * NdotL * (1 - CalculateShadowFactor(lightSpacePositions[i], vec4(-L,0.0), i));
+
+    }
+    
+    
+    vec3 color = ambient + outputLuminance;
+
+    //Tone mapping
+    color = color / (color + vec3(1.0));
+    //Gama correction
+    color = pow(color, vec3(1.0/2.2)); 
+
+   	gColorResult = vec4(color, 1.0);
+
+```
+
+ Notice that we do some tone mapping and gamma correction as extra post-processing to have a more correct look on PBR. We later pass this information to the color g-buffer so it can be outputed to the final quad. In case you are interested in reading about **deferred rendering** you can check out this post [here](https://metro-engine.github.io/2021-05-03-Forward_Rendering_And_Deferred_Rendering/).
+ 
+ 
+## Conclusion
+
+  This rendering technique is not easy to explain mathematically speaking, there a lot of variables and factors that need to be considered, you need to have a lot of advanded knowledge about `radiance` or about the graphic-backend you are utilizing to be able to implement this without too much trouble, as far as the mathematic formulas for Cook-Torrance, you can find variations of those equations each one with slightly different effects that can enrich the look of your scene depending on your specific needs.
+  
+  As always, we need to thank [LearnOpenGL](https://learnopengl.com/PBR/Theory) and [PBR Filament](https://google.github.io/filament/Filament.md.html) for the images and the explanation on this rendering technique. 
