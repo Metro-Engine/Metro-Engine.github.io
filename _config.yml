@@ -15,6 +15,8 @@ author: Ivan Ivanov Mandev & Alvaro Soriano Romero
 
 navbar-links:
   About Us: "aboutme"
+    - Multithreading in Metro Engine: "https://metro-engine.github.io/2021-05-15-Multithreading_in_Metro_Engine/"
+    - Metro Engine Video: "https://www.youtube.com/watch?v=hyn8OK1Co_Y"
   Contact Us: "contactus"
 
 # --- Logo --- #
